@@ -1,0 +1,415 @@
+#!/usr/bin/ksh
+##############################################################################################################################################################
+##############################################################################################################################################################
+##### Author    : Akhilesh Varma
+#####
+##### Purpose   : Used to load the RTT VMAS kpi scores data to STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY and  STP_RTT_VMAS_KPI_SCORES_RAW_HOURLY Tables, SAME AREA&DEVICE_HOURLY TABLES and DRUID INGESTION
+#####
+#####  Usage    : ./stp_rtt_vmas_scores_summary_hourly.sh
+##############################################################################################################################################################
+##############################################################################################################################################################
+#set -x
+if [[ -z $STPBASE ]]
+then
+  echo "STPBASE not set, cannot proceed further."
+ exit 1
+fi
+. $STPBASE/config/load_stp_config.cfg
+
+### Global Variables for this script
+
+PROCESS=$(basename ${0%.*})
+LOGDIR=$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_LOG_DIR
+LOGFILE=$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_LOG_FILE
+PIDFILE=$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_PID_FILE
+PIGSCRIPT=$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_PIG
+SRCDIR=$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_HDFS_SOURCE_DIR
+TMPDIR=$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_HDFS_TEMP_DIR
+FILEPATTERN=$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_FILEPATTERN
+WORKDIR=$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_HDFS_WORK_DIR
+ARCDIR=$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_HDFS_ARCHIVE
+SRCDELIM=$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_SRC_DELIM
+OUTDELIM=$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_OUTPUT_DELIM
+PIGGYBANK=$PIGGYBANK_JAR
+DRUID_INGESTION_HOURLY=$STP_RTT_VMAS_SUMMARY_SUBSCRIBER_AREA_DRUID_INGESTION
+
+DATE=$(date "+%Y%m%d")
+###############################################################################
+##########Function:Usage
+###############################################################################
+Usage()
+{
+  echo "Usage:$0 $1 Ex:$0(or)"
+  echo "(or)"
+  echo "$0 <Re-run date>[yyyyMMdd] <Re-run Hour> [hr]"
+}
+
+###############################################################################
+###############################################################################
+##### Function: PrepareEnv - create necessary directories
+PrepareEnv()
+{
+  ## Make the necessary directories.
+
+  hdfs dfs -mkdir -p $WORKDIR 2>/dev/null
+  hdfs dfs -mkdir -p $ARCDIR/$DATE 2>/dev/null
+  hdfs dfs -mkdir -p $TMPDIR 2>/dev/null
+}
+###############################################################################
+###############################################################################
+##### Function: InstanceCheck - to verify that only instance of the processis running
+InstanceCheck()
+{
+  ## Checking that there is no other instance of this script running
+  if [[ -a $PIDFILE ]]
+  then
+    ## Now get the pid from the PID file and see if the PID is active, and
+    ## relevant to this process.
+    pid=$(cat $PIDFILE 2>>$LOGFILE)
+    ps -o args= -p $pid | grep $PROCESS > /dev/null 2>&1
+    if [[ $? == 0 ]]
+    then
+      if [[ -t 0 ]]
+      then
+        echo "*** $(basename $0) is already running ***"
+        ps -fp $pid
+      else
+        scriptlogger $LOGFILE $PROCESS $$  "*** $(basename $0) Already running:\n $(ps -fp $pid)"
+      fi
+      ## Duplicate instance. Process stops.
+      exit 1
+    fi
+  fi
+}
+
+###############################################################################
+###############################################################################
+##### Function: WritePIDFile
+WritePIDFile()
+{
+  ## Write the PID to PID file.
+  echo $$ > $PIDFILE
+}
+
+###############################################################################
+###############################################################################
+##### Function: Druid_restart
+
+Druid_Restart ()
+{
+        if [[ -f $STP_RTT_VMAS_SCORE_TMP_DIR/stp_rtt_vmas_summary_subscriber_area_hourly_druid_failure.ctl ]]
+    then
+                reprocess_score_dt=$(awk '$1 == "Error" { print $(NF-1) }' $STP_RTT_VMAS_SCORE_TMP_DIR/stp_rtt_vmas_summary_subscriber_area_hourly_druid_failure.ctl )
+                reprocess_score_hr=$(awk '$1 == "Error" { print $NF }' $STP_RTT_VMAS_SCORE_TMP_DIR/stp_rtt_vmas_summary_subscriber_area_hourly_druid_failure.ctl )
+                $DRUID_INGESTION_HOURLY $reprocess_score_dt $reprocess_score_hr
+                if [[ $? -ne 0 ]]; then
+                 scriptlogger $LOGFILE $PROCESS $$ "Error occurred while ingesting vma summary subscriber area hourly into druid"
+                 scriptlogger $LOGFILE $PROCESS $$ "Command used: $DRUID_INGESTION_HOURLY $reprocess_score_dt $reprocess_score_hr"
+                echo "Error occurred while ingesting VMAS Summary hourly data into Druid for $reprocess_score_dt $reprocess_score_hr" >> $STP_RTT_VMAS_SCORE_TMP_DIR/stp_rtt_vmas_summary_subscriber_area_hourly_druid_failure.ctl
+                exit 1
+            else
+                 scriptlogger $LOGFILE $PROCESS $$ "VMAS Summary data successfully ingested into Druid for score date = $reprocess_score_hr and score hour = $reprocess_score_hr"
+                rm $STP_RTT_VMAS_SCORE_TMP_DIR/stp_rtt_vmas_summary_subscriber_area_hourly_druid_failure.ctl
+            fi
+    fi
+}
+
+
+###############################################################################
+###############################################################################
+# Drop If parition Exists for RTT VMAS RAW_HOURLY and AGG_HOURLY
+
+DropIfExistsRAWHDFSPartition()
+{
+        date=$1
+        hr=$2
+        hdfs dfs -test -d "$STP_RTT_VMAS_KPI_SCORES_RAW_HOURLY_HDFS_OP_PATH/score_dt=$date/score_hr=$hr" >> $LOGFILE 2>&1
+        if [[ $? -ne 0 ]]
+        then
+        scriptlogger $LOGFILE $PROCESS $$ "[INFO] No prior partition found "$STP_RTT_VMAS_KPI_SCORES_RAW_HOURLY_HDFS_OP_PATH/score_dt=$date/score_hr=$hr" Good to go."
+        return 0
+        else
+                scriptlogger $LOGFILE $PROCESS $$ "Running RTT VMAS hourly kpi scores for $date and $hr"
+                scriptlogger $LOGFILE $PROCESS $$ "Truncating $date$hr previous run data at $STP_RTT_VMAS_KPI_SCORES_RAW_HOURLY_HDFS_OP_PATH/score_dt=$date/score_hr=$hr"
+                hdfs dfs -rm -r -skipTrash "$STP_RTT_VMAS_KPI_SCORES_RAW_HOURLY_HDFS_OP_PATH/score_dt=$date/score_hr=$hr" >>$LOGFILE
+                /usr/bin/hive -e "ALTER TABLE $STPSCHEMA.$STP_RTT_VMAS_KPI_SCORES_RAW_HOURLY_HIVE_TABLE DROP PARTITION(score_dt='$date',score_hr='$hr')" >>$LOGFILE
+                if [[ $? -ne 0 ]]
+                then
+                                scriptlogger $LOGFILE $PROCESS $$ "Failed to clean directory $STP_RTT_VMAS_KPI_SCORES_RAW_HOURLY_HDFS_OP_PATH/score_dt=$date/score_hr=$hr"
+                                return 1
+                else
+                                scriptlogger $LOGFILE $PROCESS $$ "[INFO] Successfully removed HDFS partition $STP_RTT_VMAS_KPI_SCORES_RAW_HOURLY_HDFS_OP_PATH/score_dt=$date/score_hr=$hr. Good to go."
+                                return 0
+
+                fi
+        fi
+}
+
+DropIfExistsAGGHDFSPartition()
+{
+        date=$1
+        hr=$2
+        #echo "$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_HDFS_OP_PATH/score_dt=$date/score_hr=$hr"
+        hdfs dfs -test -d "$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_HDFS_OP_PATH/score_dt=$date/score_hr=$hr" >> $LOGFILE 2>&1
+        if [[ $? -ne 0 ]]
+        then
+                scriptlogger $LOGFILE $PROCESS $$ "[INFO] No prior partition found "$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_HDFS_OP_PATH/score_dt=$date/score_hr=$hr" Good to go."
+        return 0
+        else
+                scriptlogger $LOGFILE $PROCESS $$ "Running RTT VMAS hourly kpi scores subscriber agg  for $date and $hr"
+                scriptlogger $LOGFILE $PROCESS $$ "Truncating $date$hr previous run data at $STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_HDFS_OP_PATH/score_dt=$date/score_hr=$hr"
+                hdfs dfs -rm -r -skipTrash "$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_HDFS_OP_PATH/score_dt=$date/score_hr=$hr" >>$LOGFILE
+                /usr/bin/hive -e "ALTER TABLE $STPSCHEMA.$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_HIVE_TABLE DROP PARTITION(score_dt='$date',score_hr='$hr')" >>$LOGFILE
+                if [[ $? -ne 0 ]]
+                then
+                                scriptlogger $LOGFILE $PROCESS $$ "Failed to clean directory $STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_HDFS_OP_PATH/score_dt=$date/score_hr=$hr"
+                                return 1
+                else
+                                scriptlogger $LOGFILE $PROCESS $$ "[INFO] Successfully removed HDFS partition $STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_HDFS_OP_PATH/score_dt=$date/score_hr=$hr. Good to go."
+                                return 0
+                fi
+        fi
+
+}
+
+
+###############################################################################
+###############################################################################
+## CheckDateHr
+
+CheckDateHr()
+{
+if [[ $(date "+%Y%m%d %H" -d "$1 $2" ) == "$1 $2" ]]
+then
+                scriptlogger $LOGFILE $PROCESS $$ "Extracted date and hr from file name is $1 $2  is a valid argument..Good to proceed"
+                return 0
+else
+                scriptlogger $LOGFILE $PROCESS $$ "Extracted date and hr from file name is $1 $2 is not a valid argument..proceeding for another file if any"
+                return 1
+fi
+
+}
+
+###############################################################################
+###############################################################################
+## CheckCompressMove
+
+CheckCompressAndMove()
+{
+        completeFile=$1
+        scriptlogger $LOGFILE $PROCESS $$ "file is $completeFile"
+        base_name=$(basename $completeFile)
+        last_extension=${completeFile:${#1}-3:3}
+        if [[ $last_extension == ".gz" ]]
+        then
+                scriptlogger $LOGFILE $PROCESS $$ "File name has .gz extension..hence moving to $TMPDIR"
+                hdfs dfs -mv $file_name_withpath $TMPDIR >>$LOGFILE
+                if [[ $? -ne 0 ]]
+                then
+                        scriptlogger $LOGFILE $PROCESS $$ "Failed to move file from $file to $TMPDIR..Please check $TMPDIR"
+                        return 1
+                fi
+                replace_ext=""
+                filename_wo_gz=${base_name//$last_extension/$replace_text}
+                scriptlogger $LOGFILE $PROCESS $$ "filename_wo_gz is $filename_wo_gz"
+                scriptlogger $LOGFILE $PROCESS $$ "Uncompressing the File and placing in $WORKDIR"
+                hadoop fs -cat $TMPDIR/$base_name | gzip -d | hdfs dfs -put - $WORKDIR/$filename_wo_gz  >>$LOGFILE
+                if [[ $? -ne 0 ]]
+                then
+                        scriptlogger $LOGFILE $PROCESS $$ "Failed to uncompress ..Please check $TMPDIR"
+                        return 1
+                fi
+        else
+                scriptlogger $LOGFILE $PROCESS $$ "File do not have.gz extension..Hence moving directly to $WORKDIR"
+                hdfs dfs -mv $file_name_withpath $WORKDIR >>$LOGFILE
+                if [[ $? -ne 0 ]]
+                then
+                        scriptlogger $LOGFILE $PROCESS $$ "Failed to uncompress ..Please check $WORKDIR"
+                        return 1
+                fi
+
+        fi
+
+}
+
+
+
+###############################################################################
+###############################################################################
+## Main processing
+
+CoreLogic()
+{
+date=$1
+        hr=$2
+        scriptlogger $LOGFILE $PROCESS $$ "Checking the $SRCDIR for RTT VUE files"
+        input_files=$(hdfs dfs -ls $SRCDIR/$FILEPATTERN |sed 's/  */ /g' | cut -d' ' -f8) >>$LOGFILE
+        if [[ $date != ""  &&  $hr != "" ]]
+        then
+                scriptlogger $LOGFILE $PROCESS $$ "Date $date and hour $hr values are passed...Hence picking up the $date and $hr files."
+                input_files=$(hdfs dfs -ls $SRCDIR/$FILEPATTERN |grep $date$hr |sed 's/  */ /g' |cut -d' ' -f8) >>$LOGFILE
+
+        fi
+        #echo "input files list is $input_files"
+        if [[ $input_files == '' ]]
+        then
+                scriptlogger $LOGFILE $PROCESS $$ "No files found of previous run or this run in $SRCDIR. Will not proceed to the processing."
+                exit 0
+        else
+                scriptlogger $LOGFILE $PROCESS $$ "Beginning the process for $input_files"
+                for file in $input_files
+                do
+                        scriptlogger $LOGFILE $PROCESS $$ "Process started for file $file"
+                        file_name_withpath=$file
+                        filename=$(basename $file_name_withpath)
+                        file_ext=${filename#$(echo $filename | sed 's/\.[^[:digit:]].*$//g;')}
+                        replace_text=""
+                        filename_wo_extn=${filename//$file_ext/$replace_text}
+                        file_datehr="${filename_wo_extn##*_}"
+                        t_datehr="${file_datehr:0:10}"
+                        score_date=${t_datehr:0:8}
+                        score_hour=${t_datehr:8:2}
+                        CheckDateHr $score_date $score_hour
+                        if [[ $? -eq 1 ]]
+                        then
+                                scriptlogger $LOGFILE $PROCESS $$ "Hence skipping this Iteration.."
+                                continue; # skips the current iteration
+                        fi
+                        scriptlogger $LOGFILE $PROCESS $$ "Extracted score dt is $score_date and score hr is $score_hour"
+                        DropIfExistsRAWHDFSPartition $score_date $score_hour
+                        if [[ $? -eq 1 ]]
+                        then
+                                scriptlogger $LOGFILE $PROCESS $$ "Hence skipping this Iteration.."
+                                continue; # skips the current iteration
+                        fi
+                        DropIfExistsAGGHDFSPartition $score_date $score_hour
+                        if [[ $? -eq 1 ]]
+                        then
+                                scriptlogger $LOGFILE $PROCESS $$ "Hence skipping this Iteration.."
+                                continue; # skips the current iteration
+                        fi
+                        scriptlogger $LOGFILE $PROCESS $$ "Moving the File $file from SRC to $WORKDIR"
+                        CheckCompressAndMove $file_name_withpath
+                        if [[ $? -ne 0 ]]
+                        then
+                                scriptlogger $LOGFILE $PROCESS $$ "Failed to move file from $file to $WORKDIR..Please check $WORKDIR"
+                                scriptlogger $LOGFILE $PROCESS $$ "Hence skipping this Iteration.."
+                                continue; # skips the current iteration
+                        fi
+
+                        #Invoking pig script
+                        scriptlogger $LOGFILE $PROCESS $$ "/usr/bin/pig -Dexectype=tez -Dpig.additional.jars=$PIGGYBANK -useHCatalog  -f $PIGSCRIPT -param inputpath=$WORKDIR -param src_delim=$SRCDELIM -param out_delim=$OUTDELIM -param stp_rtt_vmas_kpi_scores_subscriber_agg_hourly_hdfs_path=$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_HDFS_OP_PATH -param stp_rtt_vmas_kpi_scores_raw_hourly_hdfs_path=$STP_RTT_VMAS_KPI_SCORES_RAW_HOURLY_HDFS_OP_PATH -param score_dt=$score_date -param score_hr=$score_hour >>$LOGFILE 2>&1"
+
+                        /usr/bin/pig -Dexectype=tez -Dpig.additional.jars=$PIGGYBANK -useHCatalog  -f $PIGSCRIPT -param inputpath=$WORKDIR -param src_delim=$SRCDELIM -param out_delim=$OUTDELIM -param stp_rtt_vmas_kpi_scores_subscriber_agg_hourly_hdfs_path=$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_HDFS_OP_PATH -param stp_rtt_vmas_kpi_scores_raw_hourly_hdfs_path=$STP_RTT_VMAS_KPI_SCORES_RAW_HOURLY_HDFS_OP_PATH -param score_dt=$score_date -param score_hr=$score_hour >>$LOGFILE 2>&1
+                        if [[ $? -eq 0 ]]
+                        then
+                                scriptlogger $LOGFILE $PROCESS $$ "Successfully loaded RTT VMAS hourly KPI scores raw and subscriber_id level agg data."
+                                scriptlogger $LOGFILE $PROCESS $$ "[INFO] Metasync Process start for RTT VMAS KPI RAW and AGGREGATION HOURLY tables -------------"
+                                hive -e "msck repair table $STPSCHEMA.$STP_RTT_VMAS_KPI_SCORES_RAW_HOURLY_HIVE_TABLE" >>$LOGFILE 2>&1
+                                hive -e "msck repair table $STPSCHEMA.$STP_RTT_VMAS_KPI_SCORES_SUBSCRIBER_AGG_HOURLY_HIVE_TABLE" >>$LOGFILE 2>&1
+                                scriptlogger $LOGFILE $PROCESS $$ "[INFO] Metasync Process end for RTT VMAS KPI RAW and AGGREGATION HOURLY tables -------------"
+                                scriptlogger $LOGFILE $PROCESS $$ "Moving input files to archive folder"
+                                hdfs dfs -mv $WORKDIR/"*" $ARCDIR/$DATE >>$LOGFILE
+                                if [[ $? -ne 0 ]]
+                                then
+                                        scriptlogger $LOGFILE $PROCESS $$ "Failed to move files from $WORKDIR to $ARCDIR/$DATE"
+                                else
+                                        scriptlogger $LOGFILE $PROCESS $$ "Successfully moved files from $WORKDIR to $ARCDIR/$DATE"
+                                fi
+                                scriptlogger $LOGFILE $PROCESS $$ "Removing files from temp directory"
+                                hadoop fs -rm -skipTrash $TMPDIR/"*" >>$LOGFILE
+                                if [[ $? -ne 0 ]]
+                                then
+                                        scriptlogger $LOGFILE $PROCESS $$ "Failed to remove files from $TMPDIR"
+                                else
+                                        scriptlogger $LOGFILE $PROCESS $$ "Successfully moved files from $TMPDIR"
+
+
+                                                        $STP_RTT_LOAD_SUBSCRIBER_VMAS_SAME_AREA_DEVICE_WRAPPER_HOURLY $score_date $score_hour
+
+                                                        if [[ $? -ne 0 ]]
+                                                        then
+                                                                        scriptlogger $LOGFILE $PROCESS $$  "Error in loading Same area device scores for $score_date $score_hour"
+                                                                        scriptlogger $LOGFILE $PROCESS $$  "Please check log: $STP_RTT_SAME_AREA_DEVICE_DAILY_LOG_FILE"
+                                                        else
+                                                                          if [ -e $SAME_AREA_DEVICE_WRAPPER_HOURLY_STATUS_FILE ]
+                                                                          then
+                                                                                         scriptlogger $LOGFILE $PROCESS $$  "Same area device wrapper has completed successfully"
+                                                                                         rm $SAME_AREA_DEVICE_WRAPPER_HOURLY_STATUS_FILE 2>/dev/null
+                                                                         else
+                                                                                        scriptlogger $LOGFILE $PROCESS $$ "No NSR hourly data for $score_date $score_hour"
+                                                                         fi
+                                                        fi
+
+                                                                        scriptlogger $LOGFILE $PROCESS $$ "Moving input files to archive folder"
+                                                                        hdfs dfs -mv $WORKDIR/$FILEPATTERN $ARCDIR/$DATE >>$LOGFILE
+                                                                        if [[ $? -ne 0 ]]
+                                                                        then
+                                                                                        scriptlogger $LOGFILE $PROCESS $$ "Failed to move files from $WORKDIR to $ARCDIR/$DATE"
+                                                                        else
+                                                                                        scriptlogger $LOGFILE $PROCESS $$ "Successfully moved files from $WORKDIR to $ARCDIR/$DATE"
+                                                                        fi
+
+                                if [[ $STP_RTT_LOAD_SUBSCRIBER_SCORES_HOURLY_SUMMARY_DRUID_TOGGLE -eq 1 ]]
+                                                then
+
+
+                                                        scriptlogger $LOGFILE $PROCESS $$  "Ingesting STP RTT vmas  summary data into Druid Ffor $input_date"
+
+                                                        $DRUID_INGESTION_HOURLY $score_date $score_hour
+                                                        if [[ $? -ne 0 ]]; then
+                                                                        scriptlogger $LOGFILE $PROCESS $$ "Error occurred while ingesting vmas subscriber area data into Druid for $score_date $score_hour"
+                                                                        echo "Error occurred while ingesting vmas subscriber area data into Druid for $score_date $score_hour" >> $STP_RTT_VMAS_SCORE_TMP_DIR/stp_rtt_vmas_summary_subscriber_area_hourly_druid_failure.ctl
+                                                                        exit 1
+                                                                        else
+                                                                        scriptlogger $LOGFILE $PROCESS $$ "VMAS subscriber area data successfully ingested into Druid for $score_date $score_hour"
+
+                                                        fi
+
+                                fi
+                        else
+                                scriptlogger $LOGFILE $PROCESS $$ "Failed to load RTT VMAS hourly KPI scores raw and subscriber_id level agg data."
+                        fi
+                done
+
+        fi
+        # Check if you have any files in work to call the pig script.
+ }
+
+###############################################################################
+###############################################################################
+##### Function: Main
+Main()
+{
+        PrepareEnv
+                scriptlogger $LOGFILE $PROCESS $$  "----- Process START -----"
+        InstanceCheck
+                scriptlogger $LOGFILE $PROCESS $$  "Checking for Druid ingestion failures from previous run"
+        Druid_Restart
+                if hdfs dfs -test -d $SRCDIR 2>/dev/null; then
+        WritePIDFile
+                        if [[ $# -eq 2 ]]
+        then
+                if echo $1 | egrep -q '^[0-9]{4}[0-9]{2}[0-9]{2}$' && echo $2 | egrep -q '^[0-9]{2}$'
+                then
+                        CoreLogic $1 $2
+                else
+                        Usage
+                fi
+        else
+                CoreLogic
+        fi
+        scriptlogger $LOGFILE $PROCESS $$ "----- Process END -----"
+        return 0
+                else
+        scriptlogger $LOGFILE $PROCESS $$  "Input Directory for the hour does not exist - $SRCDIR does not exist."
+        exit 1
+                fi
+}
+
+
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+Main $1 $2
