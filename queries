@@ -1,6 +1,6 @@
 P_table:
 select substr(cast(p_date_key as String), 0,12) as p_date_hr, count(*) from agg_p_cell_sub_kpi_f where p_date_key>='20190821' and p_date_key<='20190824' group by substr(cast(p_date_key as String), 0,12)
-
+select hourly_agg_date_key from agg_p_cell_sub_kpi_f where p_date_key>='20190821000000' and p_date_key<'20190825000000' group by hourly_agg_date_key;
 
 KPI_HOURLY
 select trans_dt, trans_hr, count(*) from stp_rtt_kpi_summary_hourly where trans_dt>='2019-08-21' and trans_dt<'2019-08-24' group by trans_dt, trans_hr;
