@@ -408,7 +408,7 @@ final_data_kpis = FOREACH group_final_recs {
    (((double)SUM(kpi_joind_sub_tbl.service_request_failures)/(double)SUM(kpi_joind_sub_tbl.service_request_attempts))*100) as  srf_pct:double,
    SUM(kpi_joind_sub_tbl.service_request_failures) as service_request_failures_cnt:int,
    SUM(kpi_joind_sub_tbl.service_request_attempts) as service_request_attempts_cnt:int,
-   (((double)SUM(kpi_joind_sub_tbl.session_setup_failures)/(double)SUM(kpi_joind_sub_tbl.session_setup_attempts))*100) as  pcf_pct:double,
+   (((double)SUM(kpi_joind_sub_tbl.pdn_conn_failures)/(double)SUM(kpi_joind_sub_tbl.pdn_conn_attempts))*100) as  pcf_pct:double,
    SUM(kpi_joind_sub_tbl.pdn_conn_failures) as session_setup_failures_cnt:int,
    SUM(kpi_joind_sub_tbl.pdn_conn_attempts) as session_setup_attempts_cnt:int,
    (((double)SUM(kpi_joind_sub_tbl.context_drops)/(double)SUM(kpi_joind_sub_tbl.context_events))*100) as cd_pct:double,
@@ -731,9 +731,18 @@ final_kpi_aggregated = FOREACH join_all_kpis GENERATE
         final_voice_kpis::rtpgapratio_wifi_uplink as rtpgapratio_wifi_uplink:double,
         final_voice_kpis::rtpgapratio_wifi_downlink as rtpgapratio_wifi_downlink:double;
 
+get_total_record_count_grouped = GROUP final_kpi_aggregated ALL;
+
+total_record_count = foreach get_total_record_count_grouped generate 
+MAX(final_kpi_aggregated.trans_dt_hr) as trans_dt_hr:chararray,
+COUNT(final_kpi_aggregated) as rec_count:long, 
+REPLACE(REPLACE(MAX(final_kpi_aggregated.load_time),':',''),' ','') as load_time:chararray;
+
 --Save final hourly kpis dataset to HDFS
 STORE final_kpi_aggregated INTO '$hdfs_out_path/trans_dt=$trans_dt/trans_hr=$trans_hr' USING PigStorage('|');
 
 --Save voice kpi IMSIs with no subscriber_id to HDFS
 STORE imsis_with_no_subscriber_id into '$hdfs_voice_invalid_imsis_out_path/trans_dt=$trans_dt/trans_hr=$trans_hr' USING PigStorage('|');
 
+--Save record count and load_time to a file for status update
+STORE total_record_count INTO '$status_dir/trans_dt=$trans_dt/trans_hr=$trans_hr' USING PigStorage('|');
