@@ -12,7 +12,7 @@
 -- Author      : Akhilesh Varma
 --
 -- Usage:
---   pig -Dmapred.job.queue.name=etl-pig -x tez -useHCatalog -f stp_monthly_soi_enb_feed.pig -param source_schema='npi_cem_db' -param daily_feed_table='<daily_feed_table>' -param feed_year_month='201906' -param hdfs_out_path='/data/npicem/stp/RTT/stp_monthly_soi_enb' -param out_delim='|'
+--   pig -Dmapred.job.queue.name=etl-pig -x tez -useHCatalog -f stp_monthly_soi_enb_feed.pig -param source_schema='npi_cem_db' -param source_table='<daily_feed_table>' -param trans_month='201906' -param hdfs_out_path='/data/npicem/stp/RTT/stp_monthly_soi_enb' -param out_delim='|'
 --
 -- ----------------------------------------------------------------------------------
 -- THE STORY --
@@ -48,7 +48,7 @@ SET tez.grouping.min-size 16777216;
 --
 -- 1. Load the Daily table feed snapshot
 
-daily_agg_enb_tbl = LOAD '$source_schema.$daily_feed_table' USING org.apache.hive.hcatalog.pig.HCatLoader(); 
+daily_agg_enb_tbl = LOAD '$source_schema.$source_table' USING org.apache.hive.hcatalog.pig.HCatLoader(); 
 daily_agg_enb = FOREACH daily_agg_enb_tbl GENERATE
 CONCAT(SUBSTRING(date, 4, 5),'-', SUBSTRING(date, 0, 3)) as date:chararray,
 mdn as mdn:chararray,
@@ -64,7 +64,7 @@ secondsofuse as secondsofuse:chararray;
 
 -- 2. Filter records that are needed for a month
 
-daily_agg_enb_month = FILTER daily_agg_enb BY (date matches '$feed_year_month*');
+daily_agg_enb_month = FILTER daily_agg_enb BY (date matches '$trans_month*');
 
 
 -- ----------------------------------------------------------------------------------
@@ -108,4 +108,4 @@ monthly_agg_max_enb = UNION daily_agg_enb_month_voice_grp daily_agg_enb_month_da
 --
 -- x. Store into hdfs path
 --
-STORE monthly_agg_max_enb INTO '$hdfs_out_path/feed_year_month=$feed_year_month' USING PigStorage('$out_delim');
+STORE monthly_agg_max_enb INTO '$hdfs_out_path/trans_mnth=$trans_month' USING PigStorage('$out_delim');
