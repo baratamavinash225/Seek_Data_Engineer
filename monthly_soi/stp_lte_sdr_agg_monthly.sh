@@ -98,7 +98,7 @@ ValidateArgs()
     monthYearToRun=$1
     validateDateMonth $monthYearToRun
     #Loop for all Hrs in a day
-    scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Only runmonth=$monthYearToRun argument is passed, preparing to run for $monthYearToRun"
+    scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Only trans_mnth=$monthYearToRun argument is passed, preparing to run for $monthYearToRun"
     CoreLogic $monthYearToRun
      else
     Usage
@@ -110,22 +110,22 @@ ValidateArgs()
 ##### Function: DropIfExistsHDFSPartition
 DropIfExistsHDFSPartition()
 {
-  run_month=$1
-  hadoop fs -test -d "$HDFSOUTPATH/run_month=$run_month" >> $LOGFILE 2>&1
+  trans_mnth=$1
+  hadoop fs -test -d "$HDFSOUTPATH/trans_mnth=$trans_mnth" >> $LOGFILE 2>&1
   
   if [[ $? -ne 0 ]]
   then
-    scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " NO prior partition found $HDFSOUTPATH/run_month=$run_month Good to go."
+    scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " NO prior partition found $HDFSOUTPATH/trans_mnth=$trans_mnth Good to go."
 	return 0
   else
-    hadoop fs -rm -r -skipTrash "$HDFSOUTPATH/run_month=$run_month" >> $LOGFILE 2>&1
+    hadoop fs -rm -r -skipTrash "$HDFSOUTPATH/trans_mnth=$trans_mnth" >> $LOGFILE 2>&1
     if [[  $? -ne 0  ]]
     then
-      scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed to remove HDFS folder $HDFSOUTPATH/run_month=$run_month"
+      scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed to remove HDFS folder $HDFSOUTPATH/trans_mnth=$trans_mnth"
         rm -f $PIDFILE
         exit 1
     else
-      scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully removed HDFS partition $HDFSOUTPATH/run_month=$run_month Good to go."
+      scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully removed HDFS partition $HDFSOUTPATH/trans_mnth=$trans_mnth Good to go."
         return 0
     fi
   fi
@@ -136,30 +136,30 @@ DropIfExistsHDFSPartition()
 ##### Function: RunSoiMonthlyRollup 
 RunSoiMonthlyRollup ()
 {
-  run_month=$1
-  DropIfExistsHDFSPartition $run_month
+  trans_mnth=$1
+  DropIfExistsHDFSPartition $trans_mnth
  
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " /usr/bin/pig -Dpig.additional.jars=$PIGGYBANK_JAR -Dexectype=$PIGMODE -useHCatalog -f $PIGSCRIPT -l $LOGDIR \
 			   -param source_schema=$HIVE_SCHEMA \
-               -param daily_feed_table=$SOURCE_TBL \
-			   -param feed_year_month=$run_month \
+               -param source_table=$SOURCE_TBL \
+			   -param trans_month=$trans_mnth \
 			   -param hdfs_out_path=$HDFSOUTPATH
 			   -param out_delim=$OUTPUT_DELIMITER >>$LOGFILE 2>&1 "
  
 
 	/usr/bin/pig -Dpig.additional.jars=$PIGGYBANK_JAR -Dexectype=$PIGMODE -useHCatalog -f $PIGSCRIPT -l $LOGDIR \
 				   -param source_schema=$HIVE_SCHEMA \
-				   -param daily_feed_table=$SOURCE_TBL \
-				   -param feed_year_month=$run_month \
+				   -param source_table=$SOURCE_TBL \
+				   -param trans_month=$trans_mnth \
 				   -param hdfs_out_path=$HDFSOUTPATH
 				   -param out_delim=$OUTPUT_DELIMITER >>$LOGFILE 2>&1
 
   if [[ $? -ne 0 ]]
   then
-    scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed to aggregate SOI monthly feed at $HDFSOUTPATH/run_month=$run_month. See log for more details."
+    scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed to aggregate SOI monthly feed at $HDFSOUTPATH/trans_mnth=$trans_mnth. See log for more details."
 	return 1
   else
-    scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully aggregate SOI monthly at $HDFSOUTPATH/run_month=$run_month"
+    scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully aggregate SOI monthly at $HDFSOUTPATH/trans_mnth=$trans_mnth"
     scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Metasync Process start -------------"
     hive -e "msck repair table $HIVE_SCHEMA.$TARGETTABLE" >>$LOGFILE 2>&1
     rc=$?
@@ -194,12 +194,12 @@ CheckIfExistsHDFSPath()
 ##### Function: CoreLogic
 CoreLogic()
 {
-  runMonth=$1
+  trans_mnth=$1
  
-  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Beginning the processing for SOI MONTHLY FEED for $runMonth"
-  CheckIfExistsHDFSPath $HDFSINPUTPATH/run_month=$runMonth
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Beginning the processing for SOI MONTHLY FEED for $trans_mnth"
+  CheckIfExistsHDFSPath $HDFSINPUTPATH/trans_mnth=$trans_mnth
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Checking SOI Monthly feed path in HDFS"
-  RunSoiMonthlyRollup $runMonth
+  RunSoiMonthlyRollup $trans_mnth
   rm -f $PIDFILE
   return $?
 }
