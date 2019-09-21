@@ -22,14 +22,13 @@ Usage()
 PROCESS="stp_monthly_soi_enb_feed"
 LOGFILE=$STP_MONTHLY_SOI_ENB_FEED_LOG_FILE
 PIDFILE=$STP_MONTHLY_SOI_ENB_FEED_PID_FILE
-LOGDIR=$STP_MONTHLY_SOI_ENB_FEED_LOG_DIR
+HIVE_SCHEMA=$STP_SOI_ENB_FEED_HIVE_TABLE_SCHEMA
+SOURCE_TBL=$STP_LTE_SDR_AGG_DAILY
 PIGSCRIPT=$STP_MONTHLY_SOI_ENB_FEED_PIG
 PIGMODE=$STP_MONTHLY_SOI_ENB_FEED_PIG_MODE
 HDFSINPUTPATH=$STP_MONTHLY_SOI_ENB_FEED_HDFS_PATH
 HDFSOUTPATH=$STP_MONTHLY_SOI_ENB_FEED_HDFS_PATH
-TARGETTABLE_SCHEMA=$STP_MONTHLY_SOI_ENB_FEED_OUTPUT_HIVE_TABLE_SCHEMA
 TARGETTABLE=$STP_MONTHLY_SOI_ENB_FEED_EXT_TABLE
-TARGETSTATUSFILE=$STP_MONTHLY_SOI_ENB_FEED_STATUS_SHELL_VERSION
 DELIM=$STP_MONTHLY_SOI_ENB_FEED_DELIM
 
 ### Declare Global Variables
@@ -60,14 +59,6 @@ InstanceCheck()
   fi
 }
 
-################################################################################
-################################################################################
-##### Function: PrepareEnv
-PrepareEnv()
-{
-  ## Make the necessary directories.
-  mkdir -p $LOGDIR
-}
 
 ################################################################################
 ################################################################################
@@ -149,16 +140,16 @@ RunSoiMonthlyRollup ()
   DropIfExistsHDFSPartition $run_month
  
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " /usr/bin/pig -Dpig.additional.jars=$PIGGYBANK_JAR -Dexectype=$PIGMODE -useHCatalog -f $PIGSCRIPT -l $LOGDIR \
-			   -param source_schema=$SOURCE_SCHEMA \
-               -param daily_feed_table=$DAILY_FEED_TABLE \
+			   -param source_schema=$HIVE_SCHEMA \
+               -param daily_feed_table=$SOURCE_TBL \
 			   -param feed_year_month=$run_month \
 			   -param hdfs_out_path=$HDFSOUTPATH
 			   -param out_delim=$OUTPUT_DELIMITER >>$LOGFILE 2>&1 "
  
 
 	/usr/bin/pig -Dpig.additional.jars=$PIGGYBANK_JAR -Dexectype=$PIGMODE -useHCatalog -f $PIGSCRIPT -l $LOGDIR \
-				   -param source_schema=$SOURCE_SCHEMA \
-				   -param daily_feed_table=$DAILY_FEED_TABLE \
+				   -param source_schema=$HIVE_SCHEMA \
+				   -param daily_feed_table=$SOURCE_TBL \
 				   -param feed_year_month=$run_month \
 				   -param hdfs_out_path=$HDFSOUTPATH
 				   -param out_delim=$OUTPUT_DELIMITER >>$LOGFILE 2>&1
@@ -170,7 +161,7 @@ RunSoiMonthlyRollup ()
   else
     scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully aggregate SOI monthly at $HDFSOUTPATH/run_month=$run_month"
     scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Metasync Process start -------------"
-    hive -e "msck repair table $TARGETTABLE_SCHEMA.$TARGETTABLE" >>$LOGFILE 2>&1
+    hive -e "msck repair table $HIVE_SCHEMA.$TARGETTABLE" >>$LOGFILE 2>&1
     rc=$?
     if [[ $rc -ne 0 ]]
     then
@@ -190,10 +181,10 @@ CheckIfExistsHDFSPath()
   hadoop fs -test -d "$1"
   if [[ $? -ne 0 ]]
   then
-    scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Input path not found at $1. Exiting." 
+    scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " OUTPUT path not found at $1. Exiting." 
     exit 1
   else
-    scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Input path found at $1  Good to go."
+    scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " OUTPUT path found at $1  Good to go."
     return 0
   fi
 }
@@ -221,8 +212,6 @@ Main()
 {
   scriptLogger $LOGFILE $PROCESS $$  "[INFO]" " ----- Process START -----"
 
-  PrepareEnv
-
   InstanceCheck
 
   WritePIDFile
@@ -238,5 +227,6 @@ Main()
 #################################################################################
 
 Main $@
+
 
 
