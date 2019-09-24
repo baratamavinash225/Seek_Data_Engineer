@@ -102,7 +102,7 @@ daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (mdn, 
 
  -- 4.Union of the records of voice and data
 
-monthly_agg_max_enb = UNION daily_agg_enb_month_voice_grp daily_agg_enb_month_data_grp; 
+monthly_agg_max_enb = UNION daily_agg_enb_month_voice_grp, daily_agg_enb_month_data_grp; 
 
 -- ---------------------------------------------------------------------------------------------------------------
 --
