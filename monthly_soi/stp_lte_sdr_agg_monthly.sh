@@ -139,20 +139,22 @@ RunSoiMonthlyRollup ()
   trans_mnth=$1
   DropIfExistsHDFSPartition $trans_mnth
  
-  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " /usr/bin/pig -Dpig.additional.jars=$PIGGYBANK_JAR -Dexectype=$PIGMODE -useHCatalog -f $PIGSCRIPT -l $LOGDIR \
-			   -param source_schema=$HIVE_SCHEMA \
-               -param source_table=$SOURCE_TBL \
-			   -param trans_month=$trans_mnth \
-			   -param hdfs_out_path=$HDFSOUTPATH
-			   -param out_delim=$OUTPUT_DELIMITER >>$LOGFILE 2>&1 "
- 
-
-	/usr/bin/pig -Dpig.additional.jars=$PIGGYBANK_JAR -Dexectype=$PIGMODE -useHCatalog -f $PIGSCRIPT -l $LOGDIR \
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " 	/usr/bin/pig $PIGMODE -useHCatalog \
 				   -param source_schema=$HIVE_SCHEMA \
 				   -param source_table=$SOURCE_TBL \
 				   -param trans_month=$trans_mnth \
 				   -param hdfs_out_path=$HDFSOUTPATH
-				   -param out_delim=$OUTPUT_DELIMITER >>$LOGFILE 2>&1
+				   -param out_delim=$OUTPUT_DELIMITER 
+				   -f $PIGSCRIPT >>$LOGFILE 2>&1"
+ 
+
+		/usr/bin/pig $PIGMODE -useHCatalog \
+				   -param source_schema=$HIVE_SCHEMA \
+				   -param source_table=$SOURCE_TBL \
+				   -param trans_month=$trans_mnth \
+				   -param hdfs_out_path=$HDFSOUTPATH
+				   -param out_delim=$OUTPUT_DELIMITER 
+				   -f $PIGSCRIPT >>$LOGFILE 2>&1
 
   if [[ $? -ne 0 ]]
   then
@@ -197,7 +199,7 @@ CoreLogic()
   trans_mnth=$1
  
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Beginning the processing for SOI MONTHLY FEED for $trans_mnth"
-  CheckIfExistsHDFSPath $HDFSINPUTPATH/trans_mnth=$trans_mnth
+  #CheckIfExistsHDFSPath $HDFSINPUTPATH/trans_mnth=$trans_mnth
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Checking SOI Monthly feed path in HDFS"
   RunSoiMonthlyRollup $trans_mnth
   rm -f $PIDFILE
