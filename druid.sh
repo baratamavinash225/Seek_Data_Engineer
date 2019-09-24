@@ -20,7 +20,7 @@ else
 fi
 
 Date=`date "+%Y%m%d"`
-. $STPBASE/config/load_stp_config.cfg
+. $STPBASE/config/load_stp_config_gak.cfg
 #Global Variables
 PROCESS=$STP_HOURLY_SCORE_DATA_DRUID_PROCESS
 LOGDIR=$STP_HOURLY_SCORE_DATA_DRUID_LOGDIR
