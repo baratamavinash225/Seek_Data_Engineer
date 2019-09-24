@@ -58,8 +58,8 @@ enb as enb:chararray,
 usagetype as usagetype:chararray,
 -- frommobilebytes as frommobilebytes:chararray,
 -- tomobilebytes as tomobilebytes:chararray,
-totalmobilebytes as totalmobilebytes:double,
-secondsofuse as secondsofuse:double;
+totalmobilebytes as totalmobilebytes:long,
+secondsofuse as secondsofuse:long;
 
 
 -- 2. Filter records that are needed for a month
