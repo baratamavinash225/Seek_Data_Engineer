@@ -53,13 +53,13 @@ daily_agg_enb = FOREACH daily_agg_enb_tbl GENERATE
 CONCAT(SUBSTRING(trans_date, 4, 5),'-', SUBSTRING(trans_date, 0, 3)) as trans_mnth:chararray,
 mdn as mdn:chararray,
 enb as enb:chararray,
-pdn as pdn:chararray,
-ratinggroup as ratinggroup:chararray,
+-- pdn as pdn:chararray,
+-- ratinggroup as ratinggroup:chararray,
 usagetype as usagetype:chararray,
-frommobilebytes as frommobilebytes:chararray,
-tomobilebytes as tomobilebytes:chararray,
-totalmobilebytes as totalmobilebytes:chararray,
-secondsofuse as secondsofuse:chararray;
+-- frommobilebytes as frommobilebytes:chararray,
+-- tomobilebytes as tomobilebytes:chararray,
+totalmobilebytes as totalmobilebytes:double,
+secondsofuse as secondsofuse:double;
 
 
 -- 2. Filter records that are needed for a month
