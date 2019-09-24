@@ -10,7 +10,7 @@ then
   exit 1
 fi
 
-. $STPBASE/config/load_stp_config.cfg
+. $STPBASE/config/load_stp_config_gak.cfg
 
 Usage()
 {
@@ -199,7 +199,7 @@ CoreLogic()
   trans_mnth=$1
  
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Beginning the processing for SOI MONTHLY FEED for $trans_mnth"
-  CheckIfExistsHDFSPath $HDFSINPUTPATH/trans_mnth=$trans_mnth
+  #CheckIfExistsHDFSPath $HDFSINPUTPATH/trans_mnth=$trans_mnth
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Checking SOI Monthly feed path in HDFS"
   RunSoiMonthlyRollup $trans_mnth
   rm -f $PIDFILE
