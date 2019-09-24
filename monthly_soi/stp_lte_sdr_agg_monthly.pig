@@ -50,7 +50,7 @@ SET tez.grouping.min-size 16777216;
 
 daily_agg_enb_tbl = LOAD '$source_schema.$source_table' USING org.apache.hive.hcatalog.pig.HCatLoader(); 
 daily_agg_enb = FOREACH daily_agg_enb_tbl GENERATE
-CONCAT(SUBSTRING(trans_date, 4, 5),'-', SUBSTRING(trans_date, 0, 3)) as trans_mnth:chararray,
+CONCAT(SUBSTRING(trans_dt, 4, 5),'-', SUBSTRING(trans_dt, 0, 3)) as trans_mnth:chararray,
 mdn as mdn:chararray,
 enb as enb:chararray,
 -- pdn as pdn:chararray,
