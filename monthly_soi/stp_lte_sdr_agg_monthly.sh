@@ -219,7 +219,7 @@ Main()
   WritePIDFile
  
   ValidateArgs $@
-
+  rm -rf $PIDFILE >>$LOGFILE 2>&1 
   scriptLogger $LOGFILE $PROCESS $$  "[INFO]" " ----- Process ENDS -----"
 }
 
