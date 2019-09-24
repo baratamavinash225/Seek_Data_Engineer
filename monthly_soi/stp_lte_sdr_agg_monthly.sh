@@ -139,7 +139,7 @@ RunSoiMonthlyRollup ()
   trans_mnth=$1
   DropIfExistsHDFSPartition $trans_mnth
  
-  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " 	/usr/bin/pig $PIGMODE -useHCatalog \
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " 	/usr/bin/pig -Dexectype=$PIGMODE -useHCatalog \
 				   -param source_schema=$HIVE_SCHEMA \
 				   -param source_table=$SOURCE_TBL \
 				   -param trans_month=$trans_mnth \
@@ -148,7 +148,7 @@ RunSoiMonthlyRollup ()
 				   -f $PIGSCRIPT >>$LOGFILE 2>&1"
  
 
-		/usr/bin/pig $PIGMODE -useHCatalog \
+		/usr/bin/pig -Dexectype=$PIGMODE -useHCatalog \
 				   -param source_schema=$HIVE_SCHEMA \
 				   -param source_table=$SOURCE_TBL \
 				   -param trans_month=$trans_mnth \
