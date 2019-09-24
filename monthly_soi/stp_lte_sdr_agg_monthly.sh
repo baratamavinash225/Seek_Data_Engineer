@@ -152,8 +152,8 @@ RunSoiMonthlyRollup ()
 				   -param source_schema=$HIVE_SCHEMA \
 				   -param source_table=$SOURCE_TBL \
 				   -param trans_month=$trans_mnth \
-				   -param hdfs_out_path=$HDFSOUTPATH
-				   -param out_delim=$OUTPUT_DELIMITER 
+				   -param hdfs_out_path=$HDFSOUTPATH \
+				   -param out_delim=$OUTPUT_DELIMITER \
 				   -f $PIGSCRIPT >>$LOGFILE 2>&1
 
   if [[ $? -ne 0 ]]
