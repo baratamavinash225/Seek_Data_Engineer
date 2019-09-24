@@ -74,6 +74,7 @@ daily_agg_enb_month = FILTER daily_agg_enb BY (trans_mnth matches '$trans_month*
 daily_agg_enb_month_voice_tbl = FILTER daily_agg_enb_month BY (usagetype == 'Voice');
 
 daily_agg_enb_month_voice = FOREACH daily_agg_enb_month_voice_tbl GENERATE
+trans_mnth,
 mdn,
 enb,
 usagetype,
@@ -83,6 +84,7 @@ secondsofuse;
 daily_agg_enb_month_data_tbl = FILTER daily_agg_enb_month BY (usagetype == 'Data');
 
 daily_agg_enb_month_data = FOREACH daily_agg_enb_month_data_tbl GENERATE
+trans_mnth,
 mdn,
 enb,
 usagetype,
