@@ -50,7 +50,7 @@ SET tez.grouping.min-size 16777216;
 
 daily_agg_enb_tbl = LOAD '$source_schema.$source_table' USING org.apache.hive.hcatalog.pig.HCatLoader(); 
 daily_agg_enb = FOREACH daily_agg_enb_tbl GENERATE
-CONCAT(SUBSTRING(date, 4, 5),'-', SUBSTRING(date, 0, 3)) as date:chararray,
+CONCAT(SUBSTRING(trans_date, 4, 5),'-', SUBSTRING(trans_date, 0, 3)) as trans_mnth:chararray,
 mdn as mdn:chararray,
 enb as enb:chararray,
 pdn as pdn:chararray,
@@ -64,7 +64,7 @@ secondsofuse as secondsofuse:chararray;
 
 -- 2. Filter records that are needed for a month
 
-daily_agg_enb_month = FILTER daily_agg_enb BY (date matches '$trans_month*');
+daily_agg_enb_month = FILTER daily_agg_enb BY (trans_mnth matches '$trans_month*');
 
 
 -- ----------------------------------------------------------------------------------
@@ -78,21 +78,21 @@ daily_agg_enb_month_data = FILTER daily_agg_enb_month BY (usagetype == 'Data');
 -- ---------------------------------------------------------------------------------------------------------------
 -- 3.Max sum for ENB
 
-daily_agg_enb_month_voice_grp = FOREACH (GROUP daily_agg_enb_month_voice BY (mdn, usagetype, date))
+daily_agg_enb_month_voice_grp = FOREACH (GROUP daily_agg_enb_month_voice BY (mdn, usagetype, trans_mnth))
                         {
 							sum_seconds_of_use = MAX(SUM(secondsofuse));
 							GENERATE
-							group.date AS date,
+							group.trans_mnth AS trans_mnth,
 							group.mdn AS mdn,
 							group.usagetype AS usagetype,
 							(long)sum_seconds_of_use AS enb;
                         };
 						
-daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (mdn, usagetype, date))
+daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (mdn, usagetype, trans_mnth))
                         {
 							sum_total_mobile_bytes = MAX(SUM(totalmobilebytes));
 							GENERATE
-							group.date AS date,
+							group.trans_mnth AS trans_mnth,
 							group.mdn AS mdn,
 							group.usagetype AS usagetype,
 							(long)sum_total_mobile_bytes AS enb;
@@ -100,7 +100,7 @@ daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (mdn, 
 
 -- ---------------------------------------------------------------------------------------------------------------
 
- -- 4.Union of the records of voice and data
+-- 4.Union of the records of voice and data
 
 monthly_agg_max_enb = UNION daily_agg_enb_month_voice_grp, daily_agg_enb_month_data_grp; 
 
