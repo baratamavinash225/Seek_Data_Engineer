@@ -143,8 +143,8 @@ RunSoiMonthlyRollup ()
 				   -param source_schema=$HIVE_SCHEMA \
 				   -param source_table=$SOURCE_TBL \
 				   -param trans_month=$trans_mnth \
-				   -param hdfs_out_path=$HDFSOUTPATH
-				   -param out_delim=$OUTPUT_DELIMITER 
+				   -param hdfs_out_path=$HDFSOUTPATH \
+				   -param out_delim=$OUTPUT_DELIMITER \
 				   -f $PIGSCRIPT >>$LOGFILE 2>&1"
  
 
@@ -199,7 +199,7 @@ CoreLogic()
   trans_mnth=$1
  
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Beginning the processing for SOI MONTHLY FEED for $trans_mnth"
-  #CheckIfExistsHDFSPath $HDFSINPUTPATH/trans_mnth=$trans_mnth
+  CheckIfExistsHDFSPath $HDFSINPUTPATH/trans_mnth=$trans_mnth
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Checking SOI Monthly feed path in HDFS"
   RunSoiMonthlyRollup $trans_mnth
   rm -f $PIDFILE
