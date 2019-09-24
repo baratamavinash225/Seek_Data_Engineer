@@ -71,9 +71,23 @@ daily_agg_enb_month = FILTER daily_agg_enb BY (trans_mnth matches '$trans_month*
 --
 -- 3. Filter data sets with Voice, Data based on usage type.
 
-daily_agg_enb_month_voice = FILTER daily_agg_enb_month BY (usagetype == 'Voice');
+daily_agg_enb_month_voice_tbl = FILTER daily_agg_enb_month BY (usagetype == 'Voice');
 
-daily_agg_enb_month_data = FILTER daily_agg_enb_month BY (usagetype == 'Data');
+daily_agg_enb_month_voice = FOREACH daily_agg_enb_month_voice_tbl GENERATE
+mdn,
+enb,
+usagetype,
+totalmobilebytes,
+secondsofuse;
+
+daily_agg_enb_month_data_tbl = FILTER daily_agg_enb_month BY (usagetype == 'Data');
+
+daily_agg_enb_month_data = FOREACH daily_agg_enb_month_data_tbl GENERATE
+mdn,
+enb,
+usagetype,
+totalmobilebytes,
+secondsofuse;
 
 -- ---------------------------------------------------------------------------------------------------------------
 -- 3.Max sum for ENB
