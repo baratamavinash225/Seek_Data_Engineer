@@ -94,19 +94,20 @@ secondsofuse;
 -- ---------------------------------------------------------------------------------------------------------------
 -- 3.Max sum for ENB
 
-daily_agg_enb_month_voice_grp = FOREACH (GROUP daily_agg_enb_month_voice BY (mdn, usagetype, trans_mnth))
+daily_agg_enb_month_voice_grp = FOREACH (GROUP daily_agg_enb_month_voice BY (trans_mnth, mdn, enb, usagetype))
                         {
                                                         sum_seconds_of_use = SUM(daily_agg_enb_month_voice.secondsofuse);
                                                         GENERATE
                                                         group.trans_mnth AS trans_mnth,
                                                         group.mdn AS mdn,
+														group.enb AS enb,
                                                         group.usagetype AS usagetype,
-                                                        sum_seconds_of_use AS enb;
+                                                        sum_seconds_of_use AS usage;
                         };
 
-daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY (mdn, usagetype, trans_mnth))
+daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY (trans_mnth, mdn, enb, usagetype))
 						{
-														max_seconds_of_use = MAX(daily_agg_enb_month_voice_grp.enb);
+														max_seconds_of_use = MAX(daily_agg_enb_month_voice_grp.usage);
 														GENERATE
 														group.trans_mnth AS trans_mnth,
                                                         group.mdn AS mdn,
@@ -116,20 +117,20 @@ daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY 
 						
 						
 						
-daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (mdn, usagetype, trans_mnth))
+daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (trans_mnth, mdn, enb, usagetype))
                         {
                                                         sum_total_mobile_bytes = SUM(daily_agg_enb_month_data.totalmobilebytes);
                                                         GENERATE
                                                         group.trans_mnth AS trans_mnth,
                                                         group.mdn AS mdn,
                                                         group.usagetype AS usagetype,
-                                                        sum_total_mobile_bytes AS enb;
+                                                        sum_total_mobile_bytes AS usage;
                         };
 
 						
-daily_agg_enb_month_data_max = FOREACH (GROUP daily_agg_enb_month_data_grp BY (mdn, usagetype, trans_mnth))
+daily_agg_enb_month_data_max = FOREACH (GROUP daily_agg_enb_month_data_grp BY (trans_mnth, mdn, enb, usagetype))
 						{
-														max_total_mobile_bytes = MAX(daily_agg_enb_month_data_grp.enb);
+														max_total_mobile_bytes = MAX(daily_agg_enb_month_data_grp.usage);
 														GENERATE
 														group.trans_mnth AS trans_mnth,
                                                         group.mdn AS mdn,
