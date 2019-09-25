@@ -1,0 +1,518 @@
+[stp_monthly_soi_enb_feed][28238][2019/09/25 15:24:39:411869149] [INFO]  Valid argument. Proceeding to process
+[stp_monthly_soi_enb_feed][28238][2019/09/25 15:24:39:417836712] [INFO]  Only trans_mnth=082019 argument is passed, preparing to run for 082019
+[stp_monthly_soi_enb_feed][28238][2019/09/25 15:24:39:423000071] [INFO]  Beginning the processing for SOI MONTHLY FEED for 082019
+[stp_monthly_soi_enb_feed][28238][2019/09/25 15:24:39:427913727] [INFO]  Checking SOI Monthly feed path in HDFS
+Java HotSpot(TM) 64-Bit Server VM warning: ignoring option MaxPermSize=512m; support was removed in 8.0
+Java HotSpot(TM) 64-Bit Server VM warning: ignoring option MaxPermSize=512m; support was removed in 8.0
+Deleted /data/npicem/stp/LTE/stp_lte_sdr_agg_monthly/trans_mnth=082019
+[stp_monthly_soi_enb_feed][28238][2019/09/25 15:24:43:889458284] [INFO]  Successfully removed HDFS partition /data/npicem/stp/LTE/stp_lte_sdr_agg_monthly/trans_mnth=082019 Good to go.
+[stp_monthly_soi_enb_feed][28238][2019/09/25 15:24:43:894459511] [INFO]   /usr/bin/pig -Dexectype=tez -useHCatalog                                    -param source_schema=npi_cem_db                                    -param source_table=stp_lte_sdr_agg_daily_test                                    -param trans_month=082019                                    -param hdfs_out_path=/data/npicem/stp/LTE/stp_lte_sdr_agg_monthly                                    -param out_delim=|                                    -f /data05/CEM/SIT/scripts/stp_lte_sdr_agg_monthly.pig >>/data05/CEM/SIT/logs/stp_lte_sdr_agg_monthly.log 2>&1
+ls: cannot access /usr/hdp/2.6.2.0-205/hive/lib/slf4j-api-*.jar: No such file or directory
+ls: cannot access /usr/hdp/2.6.2.0-205/hive-hcatalog/lib/*hbase-storage-handler-*.jar: No such file or directory
+Java HotSpot(TM) 64-Bit Server VM warning: ignoring option MaxPermSize=512m; support was removed in 8.0
+19/09/25 15:24:45 INFO pig.ExecTypeProvider: Trying ExecType : LOCAL
+19/09/25 15:24:45 INFO pig.ExecTypeProvider: Trying ExecType : MAPREDUCE
+19/09/25 15:24:45 INFO pig.ExecTypeProvider: Trying ExecType : TEZ_LOCAL
+19/09/25 15:24:45 INFO pig.ExecTypeProvider: Trying ExecType : TEZ
+19/09/25 15:24:45 INFO pig.ExecTypeProvider: Picked TEZ as the ExecType
+2019-09-25 15:24:45,090 [main] INFO  org.apache.pig.Main - Apache Pig version 0.16.0.2.6.2.0-205 (rexported) compiled Aug 26 2017, 09:42:41
+2019-09-25 15:24:45,090 [main] INFO  org.apache.pig.Main - Logging error messages to: /data05/CEM/SIT/scripts/pig_1569439485089.log
+2019-09-25 15:24:45,789 [main] INFO  org.apache.pig.impl.util.Utils - Default bootup file /home/vzpnpcem/.pigbootup not found
+2019-09-25 15:24:45,940 [main] INFO  org.apache.pig.backend.hadoop.executionengine.HExecutionEngine - Connecting to hadoop file system at: hdfs://ey9hdpnpuat
+2019-09-25 15:24:46,890 [main] INFO  org.apache.pig.PigServer - Pig Script ID for the session: PIG-stp_lte_sdr_agg_monthly.pig-7123b8cc-c786-4326-9f9f-14b078ce9875
+2019-09-25 15:24:47,253 [main] INFO  org.apache.hadoop.yarn.client.api.impl.TimelineClientImpl - Timeline service address: http://ey9omprna020.vzbi.com:8188/ws/v1/timeline/
+2019-09-25 15:24:47,391 [main] INFO  org.apache.pig.backend.hadoop.PigATSClient - Created ATS Hook
+2019-09-25 15:24:48,278 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.broker.address.default does not exist
+2019-09-25 15:24:48,279 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.password does not exist
+2019-09-25 15:24:48,279 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.coordinator.address.default does not exist
+2019-09-25 15:24:48,280 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.uri does not exist
+2019-09-25 15:24:48,280 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.username does not exist
+2019-09-25 15:24:48,280 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.custom-extensions.root does not exist
+2019-09-25 15:24:48,280 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.semantic.analyzer.factory.impl does not exist
+2019-09-25 15:24:48,286 [main] INFO  org.apache.hive.hcatalog.common.HiveClientCache - Initializing cache: eviction-timeout=120 initial-capacity=50 maximum-capacity=50
+2019-09-25 15:24:48,318 [main] INFO  hive.metastore - Trying to connect to metastore with URI thrift://ey9omprna019.vzbi.com:9083
+2019-09-25 15:24:49,106 [main] INFO  hive.metastore - Connected to metastore.
+2019-09-25 15:24:49,769 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.broker.address.default does not exist
+2019-09-25 15:24:49,769 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.password does not exist
+2019-09-25 15:24:49,769 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.coordinator.address.default does not exist
+2019-09-25 15:24:49,769 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.uri does not exist
+2019-09-25 15:24:49,769 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.username does not exist
+2019-09-25 15:24:49,769 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.custom-extensions.root does not exist
+2019-09-25 15:24:49,769 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.semantic.analyzer.factory.impl does not exist
+2019-09-25 15:24:49,909 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.broker.address.default does not exist
+2019-09-25 15:24:49,909 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.password does not exist
+2019-09-25 15:24:49,909 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.coordinator.address.default does not exist
+2019-09-25 15:24:49,910 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.uri does not exist
+2019-09-25 15:24:49,910 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.username does not exist
+2019-09-25 15:24:49,910 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.custom-extensions.root does not exist
+2019-09-25 15:24:49,910 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.semantic.analyzer.factory.impl does not exist
+daily_agg_enb_month_voice_max: {max_record::trans_mnth: chararray,max_record::mdn: chararray,max_record::enb: chararray,max_record::usagetype: chararray,max_record::usage: long}
+2019-09-25 15:24:50,064 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.broker.address.default does not exist
+2019-09-25 15:24:50,064 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.password does not exist
+2019-09-25 15:24:50,064 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.coordinator.address.default does not exist
+2019-09-25 15:24:50,065 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.uri does not exist
+2019-09-25 15:24:50,065 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.username does not exist
+2019-09-25 15:24:50,065 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.custom-extensions.root does not exist
+2019-09-25 15:24:50,065 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.semantic.analyzer.factory.impl does not exist
+2019-09-25 15:24:50,127 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.broker.address.default does not exist
+2019-09-25 15:24:50,127 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.password does not exist
+2019-09-25 15:24:50,127 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.coordinator.address.default does not exist
+2019-09-25 15:24:50,128 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.uri does not exist
+2019-09-25 15:24:50,128 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.username does not exist
+2019-09-25 15:24:50,128 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.custom-extensions.root does not exist
+2019-09-25 15:24:50,128 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.semantic.analyzer.factory.impl does not exist
+daily_agg_enb_month_data_max: {max_record::trans_mnth: chararray,max_record::mdn: chararray,max_record::enb: chararray,max_record::usagetype: chararray,max_record::usage: long}
+2019-09-25 15:24:50,207 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.broker.address.default does not exist
+2019-09-25 15:24:50,207 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.password does not exist
+2019-09-25 15:24:50,208 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.coordinator.address.default does not exist
+2019-09-25 15:24:50,208 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.uri does not exist
+2019-09-25 15:24:50,208 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.username does not exist
+2019-09-25 15:24:50,208 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.custom-extensions.root does not exist
+2019-09-25 15:24:50,208 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.semantic.analyzer.factory.impl does not exist
+2019-09-25 15:24:50,291 [main] INFO  org.apache.pig.tools.pigstats.ScriptState - Pig features used in the script: GROUP_BY,FILTER,UNION
+2019-09-25 15:24:50,318 [main] INFO  org.apache.pig.data.SchemaTupleBackend - Key [pig.schematuple] was not set... will not generate code.
+2019-09-25 15:24:50,352 [main] INFO  org.apache.pig.newplan.logical.optimizer.LogicalPlanOptimizer - {RULES_ENABLED=[AddForEach, ColumnMapKeyPrune, ConstantCalculator, GroupByConstParallelSetter, LimitOptimizer, LoadTypeCastInserter, MergeFilter, MergeForEach, PartitionFilterOptimizer, PredicatePushdownOptimizer, PushDownForEachFlatten, PushUpFilter, SplitFilter, StreamTypeCastInserter]}
+2019-09-25 15:24:50,414 [main] INFO  org.apache.pig.impl.util.SpillableMemoryManager - Selected heap (PS Old Gen) of size 1431830528 to monitor. collectionUsageThreshold = 1064828928, usageThreshold = 1064828928
+2019-09-25 15:24:50,668 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezLauncher - Tez staging directory is /tmp/vzpnpcem/staging and resources directory is /tmp/temp737927921
+2019-09-25 15:24:50,706 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.plan.TezCompiler - File concatenation threshold: 100 optimistic? false
+2019-09-25 15:24:50,748 [main] INFO  org.apache.pig.backend.hadoop.executionengine.util.CombinerOptimizerUtil - Choosing to move algebraic foreach to combiner
+2019-09-25 15:24:50,753 [main] INFO  org.apache.pig.backend.hadoop.executionengine.util.CombinerOptimizerUtil - Choosing to move algebraic foreach to combiner
+2019-09-25 15:24:50,768 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.plan.optimizer.SecondaryKeyOptimizerTez - Using Secondary Key Optimization in the edge between vertex - scope-147 and vertex - scope-148
+2019-09-25 15:24:50,769 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.plan.optimizer.SecondaryKeyOptimizerTez - Using Secondary Key Optimization in the edge between vertex - scope-151 and vertex - scope-152
+2019-09-25 15:24:50,850 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.broker.address.default does not exist
+2019-09-25 15:24:50,850 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.password does not exist
+2019-09-25 15:24:50,851 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.coordinator.address.default does not exist
+2019-09-25 15:24:50,851 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.uri does not exist
+2019-09-25 15:24:50,851 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.druid.metadata.username does not exist
+2019-09-25 15:24:50,851 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.custom-extensions.root does not exist
+2019-09-25 15:24:50,851 [main] WARN  org.apache.hadoop.hive.conf.HiveConf - HiveConf of name hive.semantic.analyzer.factory.impl does not exist
+2019-09-25 15:24:51,065 [main] INFO  org.apache.hadoop.mapred.FileInputFormat - Total input paths to process : 1
+2019-09-25 15:24:51,072 [main] INFO  org.apache.pig.backend.hadoop.executionengine.util.MapRedUtil - Total input paths (combined) to process : 1
+2019-09-25 15:24:52,787 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJobCompiler - Local resource: libfb303-0.9.3.jar
+2019-09-25 15:24:52,787 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJobCompiler - Local resource: libthrift-0.9.3.jar
+2019-09-25 15:24:52,787 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJobCompiler - Local resource: hive-hcatalog-core-1.2.1000.2.6.2.0-205.jar
+2019-09-25 15:24:52,787 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJobCompiler - Local resource: hive-hcatalog-pig-adapter-1.2.1000.2.6.2.0-205.jar
+2019-09-25 15:24:52,787 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJobCompiler - Local resource: jdo-api-3.0.1.jar
+2019-09-25 15:24:52,787 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJobCompiler - Local resource: automaton-1.11-8.jar
+2019-09-25 15:24:52,787 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJobCompiler - Local resource: hive-hbase-handler-1.2.1000.2.6.2.0-205.jar
+2019-09-25 15:24:52,787 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJobCompiler - Local resource: hive-exec-1.2.1000.2.6.2.0-205.jar
+2019-09-25 15:24:52,787 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJobCompiler - Local resource: antlr-runtime-3.4.jar
+2019-09-25 15:24:52,787 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJobCompiler - Local resource: hive-metastore-1.2.1000.2.6.2.0-205.jar
+2019-09-25 15:24:52,787 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJobCompiler - Local resource: pig-0.16.0.2.6.2.0-205-core-h2.jar
+2019-09-25 15:24:52,971 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - For vertex - scope-143: parallelism=1, memory=8192, java opts=-XX:+PrintGCDetails -verbose:gc -XX:+PrintGCTimeStamps -XX:+UseNUMA -XX:+UseParallelGC
+2019-09-25 15:24:52,971 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Processing aliases: daily_agg_enb,daily_agg_enb_month,daily_agg_enb_tbl
+2019-09-25 15:24:52,971 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Detailed locations: daily_agg_enb_tbl[51,20],daily_agg_enb[55,16],daily_agg_enb_month[57,22]
+2019-09-25 15:24:52,971 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Pig features in the vertex:
+2019-09-25 15:24:53,062 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - For vertex - scope-145: parallelism=-1, memory=8192, java opts=-XX:+PrintGCDetails -verbose:gc -XX:+PrintGCTimeStamps -XX:+UseNUMA -XX:+UseParallelGC
+2019-09-25 15:24:53,063 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Processing aliases: 1-19,daily_agg_enb_month_voice,daily_agg_enb_month_voice_grp,daily_agg_enb_month_voice_tbl
+2019-09-25 15:24:53,063 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Detailed locations: daily_agg_enb_month_voice_tbl[67,32],daily_agg_enb_month_voice[69,28],daily_agg_enb_month_voice_grp[90,32],1-19[90,41]
+2019-09-25 15:24:53,063 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Pig features in the vertex:
+2019-09-25 15:24:53,111 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Set auto parallelism for vertex scope-147
+2019-09-25 15:24:53,111 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - For vertex - scope-147: parallelism=1, memory=8192, java opts=-XX:+PrintGCDetails -verbose:gc -XX:+PrintGCTimeStamps -XX:+UseNUMA -XX:+UseParallelGC
+2019-09-25 15:24:53,111 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Processing aliases: 1-20,daily_agg_enb_month_voice_grp
+2019-09-25 15:24:53,111 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Detailed locations: daily_agg_enb_month_voice_grp[90,32],1-20[112,41]
+2019-09-25 15:24:53,111 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Pig features in the vertex: GROUP_BY
+2019-09-25 15:24:53,172 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Set auto parallelism for vertex scope-148
+2019-09-25 15:24:53,173 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - For vertex - scope-148: parallelism=1, memory=8192, java opts=-XX:+PrintGCDetails -verbose:gc -XX:+PrintGCTimeStamps -XX:+UseNUMA -XX:+UseParallelGC
+2019-09-25 15:24:53,173 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Processing aliases: daily_agg_enb_month_voice_max,max_record
+2019-09-25 15:24:53,173 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Detailed locations: daily_agg_enb_month_voice_max[112,32],max_record[115,70]
+2019-09-25 15:24:53,173 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Pig features in the vertex: GROUP_BY
+2019-09-25 15:24:53,214 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - For vertex - scope-149: parallelism=-1, memory=8192, java opts=-XX:+PrintGCDetails -verbose:gc -XX:+PrintGCTimeStamps -XX:+UseNUMA -XX:+UseParallelGC
+2019-09-25 15:24:53,215 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Processing aliases: 1-21,daily_agg_enb_month_data,daily_agg_enb_month_data_grp,daily_agg_enb_month_data_tbl
+2019-09-25 15:24:53,215 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Detailed locations: daily_agg_enb_month_data_tbl[77,31],daily_agg_enb_month_data[79,27],daily_agg_enb_month_data_grp[121,31],1-21[121,40]
+2019-09-25 15:24:53,215 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Pig features in the vertex:
+2019-09-25 15:24:53,234 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Set auto parallelism for vertex scope-151
+2019-09-25 15:24:53,234 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - For vertex - scope-151: parallelism=1, memory=8192, java opts=-XX:+PrintGCDetails -verbose:gc -XX:+PrintGCTimeStamps -XX:+UseNUMA -XX:+UseParallelGC
+2019-09-25 15:24:53,234 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Processing aliases: 1-22,daily_agg_enb_month_data_grp
+2019-09-25 15:24:53,234 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Detailed locations: daily_agg_enb_month_data_grp[121,31],1-22[143,40]
+2019-09-25 15:24:53,234 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Pig features in the vertex: GROUP_BY
+2019-09-25 15:24:53,263 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Set auto parallelism for vertex scope-152
+2019-09-25 15:24:53,263 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - For vertex - scope-152: parallelism=1, memory=8192, java opts=-XX:+PrintGCDetails -verbose:gc -XX:+PrintGCTimeStamps -XX:+UseNUMA -XX:+UseParallelGC
+2019-09-25 15:24:53,263 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Processing aliases: daily_agg_enb_month_data_max,max_record
+2019-09-25 15:24:53,263 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Detailed locations: daily_agg_enb_month_data_max[143,31],max_record[146,70]
+2019-09-25 15:24:53,263 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezDagBuilder - Pig features in the vertex: GROUP_BY
+2019-09-25 15:24:53,291 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJobCompiler - Total estimated parallelism is 7
+2019-09-25 15:24:53,376 [PigTezLauncher-0] INFO  org.apache.pig.tools.pigstats.tez.TezScriptState - Pig script settings are added to the job
+2019-09-25 15:24:53,391 [PigTezLauncher-0] INFO  org.apache.tez.client.TezClient - Tez Client Version: [ component=tez-api, version=0.7.0.2.6.2.0-205, revision=07380b58a1bea46da5760e1007adef8fbb7cad6e, SCM-URL=scm:git:https://git-wip-us.apache.org/repos/asf/tez.git, buildTime=2017-08-26T08:19:10Z ]
+2019-09-25 15:24:53,574 [PigTezLauncher-0] INFO  org.apache.hadoop.yarn.client.AHSProxy - Connecting to Application History server at ey9omprna020.vzbi.com/166.37.224.242:10200
+2019-09-25 15:24:53,579 [PigTezLauncher-0] INFO  org.apache.tez.client.TezClient - Session mode. Starting session.
+2019-09-25 15:24:53,583 [PigTezLauncher-0] INFO  org.apache.tez.client.TezClientUtils - Using tez.lib.uris value from configuration: /hdp/apps/2.6.2.0-205/tez/tez.tar.gz
+2019-09-25 15:24:53,608 [PigTezLauncher-0] INFO  org.apache.hadoop.yarn.client.RequestHedgingRMFailoverProxyProvider - Looking for the active RM in [rm1, rm2]...
+2019-09-25 15:24:53,616 [PigTezLauncher-0] INFO  org.apache.hadoop.yarn.client.RequestHedgingRMFailoverProxyProvider - Found active RM [rm2]
+2019-09-25 15:24:53,677 [PigTezLauncher-0] INFO  org.apache.tez.client.TezClient - Tez system stage directory hdfs://ey9hdpnpuat/tmp/vzpnpcem/staging/.tez/application_1560906012335_271113 doesn't exist and is created
+2019-09-25 15:24:54,148 [PigTezLauncher-0] INFO  org.apache.hadoop.yarn.client.api.impl.YarnClientImpl - Submitted application application_1560906012335_271113
+2019-09-25 15:24:54,149 [PigTezLauncher-0] INFO  org.apache.tez.client.TezClient - The url to track the Tez Session: http://ey9omprna019.vzbi.com:8088/proxy/application_1560906012335_271113/
+2019-09-25 15:25:00,795 [PigTezLauncher-0] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJob - Submitting DAG PigLatin:stp_lte_sdr_agg_monthly.pig-0_scope-0
+2019-09-25 15:25:00,795 [PigTezLauncher-0] INFO  org.apache.tez.client.TezClient - Submitting dag to TezSession, sessionName=PigLatin:stp_lte_sdr_agg_monthly.pig, applicationId=application_1560906012335_271113, dagName=PigLatin:stp_lte_sdr_agg_monthly.pig-0_scope-0, callerContext={ context=PIG, callerType=PIG_SCRIPT_ID, callerId=PIG-stp_lte_sdr_agg_monthly.pig-7123b8cc-c786-4326-9f9f-14b078ce9875 }
+2019-09-25 15:25:00,800 [PigTezLauncher-0] INFO  org.apache.tez.dag.api.DAG - Inferring parallelism for vertex: scope-145 to be 1 from 1-1 connection with vertex scope-143
+2019-09-25 15:25:00,800 [PigTezLauncher-0] INFO  org.apache.tez.dag.api.DAG - Inferring parallelism for vertex: scope-149 to be 1 from 1-1 connection with vertex scope-143
+2019-09-25 15:25:01,756 [PigTezLauncher-0] INFO  org.apache.tez.client.TezClient - Submitted dag to TezSession, sessionName=PigLatin:stp_lte_sdr_agg_monthly.pig, applicationId=application_1560906012335_271113, dagName=PigLatin:stp_lte_sdr_agg_monthly.pig-0_scope-0
+2019-09-25 15:25:01,831 [PigTezLauncher-0] INFO  org.apache.hadoop.yarn.client.AHSProxy - Connecting to Application History server at ey9omprna020.vzbi.com/166.37.224.242:10200
+2019-09-25 15:25:01,840 [PigTezLauncher-0] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJob - Submitted DAG PigLatin:stp_lte_sdr_agg_monthly.pig-0_scope-0. Application id: application_1560906012335_271113
+2019-09-25 15:25:01,841 [PigTezLauncher-0] INFO  org.apache.hadoop.yarn.client.RequestHedgingRMFailoverProxyProvider - Looking for the active RM in [rm1, rm2]...
+2019-09-25 15:25:01,842 [PigTezLauncher-0] INFO  org.apache.hadoop.yarn.client.RequestHedgingRMFailoverProxyProvider - Found active RM [rm2]
+2019-09-25 15:25:02,334 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezLauncher - HadoopJobId: job_1560906012335_271113
+2019-09-25 15:25:02,841 [Timer-0] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJob - DAG Status: status=RUNNING, progress=TotalTasks: -1 Succeeded: 0 Running: 0 Failed: 0 Killed: 0, diagnostics=, counters=null
+2019-09-25 15:25:12,015 [PigTezLauncher-0] INFO  org.apache.tez.common.counters.Limits - Counter limits initialized with parameters:  GROUP_NAME_MAX=256, MAX_GROUPS=3000, COUNTER_NAME_MAX=64, MAX_COUNTERS=2000
+2019-09-25 15:25:12,022 [PigTezLauncher-0] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezJob - DAG Status: status=SUCCEEDED, progress=TotalTasks: 7 Succeeded: 7 Running: 0 Failed: 0 Killed: 0, diagnostics=, counters=Counters: 256
+        org.apache.tez.common.counters.DAGCounter
+                NUM_SUCCEEDED_TASKS=7
+                TOTAL_LAUNCHED_TASKS=7
+                OTHER_LOCAL_TASKS=2
+                RACK_LOCAL_TASKS=1
+                AM_CPU_MILLISECONDS=2730
+                AM_GC_TIME_MILLIS=0
+        File System Counters
+                FILE_BYTES_READ=786
+                FILE_BYTES_WRITTEN=1075
+                HDFS_BYTES_READ=718
+                HDFS_BYTES_WRITTEN=99
+                HDFS_READ_OPS=7
+                HDFS_WRITE_OPS=4
+                HDFS_OP_CREATE=2
+                HDFS_OP_GET_FILE_STATUS=6
+                HDFS_OP_OPEN=1
+                HDFS_OP_RENAME=2
+        org.apache.tez.common.counters.TaskCounter
+                REDUCE_INPUT_GROUPS=12
+                REDUCE_INPUT_RECORDS=12
+                COMBINE_INPUT_RECORDS=0
+                SPILLED_RECORDS=24
+                NUM_SHUFFLED_INPUTS=6
+                NUM_SKIPPED_INPUTS=0
+                NUM_FAILED_SHUFFLE_INPUTS=0
+                MERGED_MAP_OUTPUTS=4
+                GC_TIME_MILLIS=214
+                CPU_MILLISECONDS=13930
+                PHYSICAL_MEMORY_BYTES=18245746688
+                VIRTUAL_MEMORY_BYTES=63197601792
+                COMMITTED_HEAP_BYTES=18245746688
+                INPUT_RECORDS_PROCESSED=47
+                INPUT_SPLIT_LENGTH_BYTES=718
+                OUTPUT_RECORDS=54
+                OUTPUT_LARGE_RECORDS=0
+                OUTPUT_BYTES=2404
+                OUTPUT_BYTES_WITH_OVERHEAD=2071
+                OUTPUT_BYTES_PHYSICAL=796
+                ADDITIONAL_SPILLS_BYTES_WRITTEN=135
+                ADDITIONAL_SPILLS_BYTES_READ=376
+                ADDITIONAL_SPILL_COUNT=0
+                SHUFFLE_CHUNK_COUNT=4
+                SHUFFLE_BYTES=748
+                SHUFFLE_BYTES_DECOMPRESSED=2071
+                SHUFFLE_BYTES_TO_MEM=321
+                SHUFFLE_BYTES_TO_DISK=0
+                SHUFFLE_BYTES_DISK_DIRECT=427
+                NUM_MEM_TO_DISK_MERGES=0
+                NUM_DISK_TO_DISK_MERGES=0
+                SHUFFLE_PHASE_TIME=559
+                MERGE_PHASE_TIME=133
+                FIRST_EVENT_RECEIVED=476
+                LAST_EVENT_RECEIVED=476
+        MultiStoreCounters
+                Output records in _0_trans_mnth=082019=6
+        Shuffle Errors
+                BAD_ID=0
+                CONNECTION=0
+                IO_ERROR=0
+                WRONG_LENGTH=0
+                WRONG_MAP=0
+                WRONG_REDUCE=0
+        Shuffle Errors_scope_147_INPUT_scope_145
+                BAD_ID=0
+                CONNECTION=0
+                IO_ERROR=0
+                WRONG_LENGTH=0
+                WRONG_MAP=0
+                WRONG_REDUCE=0
+        Shuffle Errors_scope_148_INPUT_scope_147
+                BAD_ID=0
+                CONNECTION=0
+                IO_ERROR=0
+                WRONG_LENGTH=0
+                WRONG_MAP=0
+                WRONG_REDUCE=0
+        Shuffle Errors_scope_151_INPUT_scope_149
+                BAD_ID=0
+                CONNECTION=0
+                IO_ERROR=0
+                WRONG_LENGTH=0
+                WRONG_MAP=0
+                WRONG_REDUCE=0
+        Shuffle Errors_scope_152_INPUT_scope_151
+                BAD_ID=0
+                CONNECTION=0
+                IO_ERROR=0
+                WRONG_LENGTH=0
+                WRONG_MAP=0
+                WRONG_REDUCE=0
+        TaskCounter_scope_143_INPUT_scope_0
+                INPUT_RECORDS_PROCESSED=19
+                INPUT_SPLIT_LENGTH_BYTES=718
+        TaskCounter_scope_143_OUTPUT_scope_145
+                ADDITIONAL_SPILLS_BYTES_READ=0
+                ADDITIONAL_SPILLS_BYTES_WRITTEN=0
+                ADDITIONAL_SPILL_COUNT=0
+                OUTPUT_BYTES=699
+                OUTPUT_BYTES_PHYSICAL=210
+                OUTPUT_BYTES_WITH_OVERHEAD=733
+                OUTPUT_LARGE_RECORDS=0
+                OUTPUT_RECORDS=14
+                SPILLED_RECORDS=0
+        TaskCounter_scope_143_OUTPUT_scope_149
+                ADDITIONAL_SPILLS_BYTES_READ=0
+                ADDITIONAL_SPILLS_BYTES_WRITTEN=0
+                ADDITIONAL_SPILL_COUNT=0
+                OUTPUT_BYTES=699
+                OUTPUT_BYTES_PHYSICAL=210
+                OUTPUT_BYTES_WITH_OVERHEAD=733
+                OUTPUT_LARGE_RECORDS=0
+                OUTPUT_RECORDS=14
+                SPILLED_RECORDS=0
+        TaskCounter_scope_145_INPUT_scope_143
+                FIRST_EVENT_RECEIVED=328
+                INPUT_RECORDS_PROCESSED=14
+                LAST_EVENT_RECEIVED=328
+                NUM_FAILED_SHUFFLE_INPUTS=0
+                NUM_SHUFFLED_INPUTS=1
+                SHUFFLE_BYTES=186
+                SHUFFLE_BYTES_DECOMPRESSED=733
+                SHUFFLE_BYTES_DISK_DIRECT=0
+                SHUFFLE_BYTES_TO_DISK=0
+                SHUFFLE_BYTES_TO_MEM=186
+                SHUFFLE_PHASE_TIME=362
+        TaskCounter_scope_145_OUTPUT_scope_147
+                ADDITIONAL_SPILLS_BYTES_READ=0
+                ADDITIONAL_SPILLS_BYTES_WRITTEN=0
+                ADDITIONAL_SPILL_COUNT=0
+                OUTPUT_BYTES=45
+                OUTPUT_BYTES_PHYSICAL=67
+                OUTPUT_BYTES_WITH_OVERHEAD=53
+                OUTPUT_RECORDS=1
+                SHUFFLE_CHUNK_COUNT=1
+                SPILLED_RECORDS=1
+        TaskCounter_scope_147_INPUT_scope_145
+                ADDITIONAL_SPILLS_BYTES_READ=67
+                ADDITIONAL_SPILLS_BYTES_WRITTEN=67
+                COMBINE_INPUT_RECORDS=0
+                FIRST_EVENT_RECEIVED=1
+                LAST_EVENT_RECEIVED=1
+                MERGED_MAP_OUTPUTS=1
+                MERGE_PHASE_TIME=70
+                NUM_DISK_TO_DISK_MERGES=0
+                NUM_FAILED_SHUFFLE_INPUTS=0
+                NUM_MEM_TO_DISK_MERGES=0
+                NUM_SHUFFLED_INPUTS=1
+                NUM_SKIPPED_INPUTS=0
+                REDUCE_INPUT_GROUPS=1
+                REDUCE_INPUT_RECORDS=1
+                SHUFFLE_BYTES=67
+                SHUFFLE_BYTES_DECOMPRESSED=53
+                SHUFFLE_BYTES_DISK_DIRECT=0
+                SHUFFLE_BYTES_TO_DISK=0
+                SHUFFLE_BYTES_TO_MEM=67
+                SHUFFLE_PHASE_TIME=22
+                SPILLED_RECORDS=1
+        TaskCounter_scope_147_OUTPUT_scope_148
+                ADDITIONAL_SPILLS_BYTES_READ=0
+                ADDITIONAL_SPILLS_BYTES_WRITTEN=0
+                ADDITIONAL_SPILL_COUNT=0
+                OUTPUT_BYTES=46
+                OUTPUT_BYTES_PHYSICAL=68
+                OUTPUT_BYTES_WITH_OVERHEAD=54
+                OUTPUT_RECORDS=1
+                SHUFFLE_CHUNK_COUNT=1
+                SPILLED_RECORDS=1
+        TaskCounter_scope_148_INPUT_scope_147
+                ADDITIONAL_SPILLS_BYTES_READ=68
+                ADDITIONAL_SPILLS_BYTES_WRITTEN=68
+                COMBINE_INPUT_RECORDS=0
+                FIRST_EVENT_RECEIVED=10
+                LAST_EVENT_RECEIVED=10
+                MERGED_MAP_OUTPUTS=1
+                MERGE_PHASE_TIME=33
+                NUM_DISK_TO_DISK_MERGES=0
+                NUM_FAILED_SHUFFLE_INPUTS=0
+                NUM_MEM_TO_DISK_MERGES=0
+                NUM_SHUFFLED_INPUTS=1
+                NUM_SKIPPED_INPUTS=0
+                REDUCE_INPUT_GROUPS=1
+                REDUCE_INPUT_RECORDS=1
+                SHUFFLE_BYTES=68
+                SHUFFLE_BYTES_DECOMPRESSED=54
+                SHUFFLE_BYTES_DISK_DIRECT=0
+                SHUFFLE_BYTES_TO_DISK=0
+                SHUFFLE_BYTES_TO_MEM=68
+                SHUFFLE_PHASE_TIME=24
+                SPILLED_RECORDS=1
+        TaskCounter_scope_148_OUTPUT_scope_142
+                OUTPUT_RECORDS=1
+        TaskCounter_scope_149_INPUT_scope_143
+                FIRST_EVENT_RECEIVED=123
+                INPUT_RECORDS_PROCESSED=14
+                LAST_EVENT_RECEIVED=123
+                NUM_FAILED_SHUFFLE_INPUTS=0
+                NUM_SHUFFLED_INPUTS=1
+                SHUFFLE_BYTES=186
+                SHUFFLE_BYTES_DECOMPRESSED=733
+                SHUFFLE_BYTES_DISK_DIRECT=186
+                SHUFFLE_BYTES_TO_DISK=0
+                SHUFFLE_BYTES_TO_MEM=0
+                SHUFFLE_PHASE_TIME=132
+        TaskCounter_scope_149_OUTPUT_scope_151
+                ADDITIONAL_SPILLS_BYTES_READ=0
+                ADDITIONAL_SPILLS_BYTES_WRITTEN=0
+                ADDITIONAL_SPILL_COUNT=0
+                OUTPUT_BYTES=676
+                OUTPUT_BYTES_PHYSICAL=114
+                OUTPUT_BYTES_WITH_OVERHEAD=243
+                OUTPUT_RECORDS=13
+                SHUFFLE_CHUNK_COUNT=1
+                SPILLED_RECORDS=5
+        TaskCounter_scope_151_INPUT_scope_149
+                ADDITIONAL_SPILLS_BYTES_READ=114
+                ADDITIONAL_SPILLS_BYTES_WRITTEN=0
+                COMBINE_INPUT_RECORDS=0
+                FIRST_EVENT_RECEIVED=12
+                LAST_EVENT_RECEIVED=12
+                MERGED_MAP_OUTPUTS=1
+                MERGE_PHASE_TIME=24
+                NUM_DISK_TO_DISK_MERGES=0
+                NUM_FAILED_SHUFFLE_INPUTS=0
+                NUM_MEM_TO_DISK_MERGES=0
+                NUM_SHUFFLED_INPUTS=1
+                NUM_SKIPPED_INPUTS=0
+                REDUCE_INPUT_GROUPS=5
+                REDUCE_INPUT_RECORDS=5
+                SHUFFLE_BYTES=114
+                SHUFFLE_BYTES_DECOMPRESSED=243
+                SHUFFLE_BYTES_DISK_DIRECT=114
+                SHUFFLE_BYTES_TO_DISK=0
+                SHUFFLE_BYTES_TO_MEM=0
+                SHUFFLE_PHASE_TIME=15
+                SPILLED_RECORDS=5
+        TaskCounter_scope_151_OUTPUT_scope_152
+                ADDITIONAL_SPILLS_BYTES_READ=0
+                ADDITIONAL_SPILLS_BYTES_WRITTEN=0
+                ADDITIONAL_SPILL_COUNT=0
+                OUTPUT_BYTES=239
+                OUTPUT_BYTES_PHYSICAL=127
+                OUTPUT_BYTES_WITH_OVERHEAD=255
+                OUTPUT_RECORDS=5
+                SHUFFLE_CHUNK_COUNT=1
+                SPILLED_RECORDS=5
+        TaskCounter_scope_152_INPUT_scope_151
+                ADDITIONAL_SPILLS_BYTES_READ=127
+                ADDITIONAL_SPILLS_BYTES_WRITTEN=0
+                COMBINE_INPUT_RECORDS=0
+                FIRST_EVENT_RECEIVED=2
+                LAST_EVENT_RECEIVED=2
+                MERGED_MAP_OUTPUTS=1
+                MERGE_PHASE_TIME=6
+                NUM_DISK_TO_DISK_MERGES=0
+                NUM_FAILED_SHUFFLE_INPUTS=0
+                NUM_MEM_TO_DISK_MERGES=0
+                NUM_SHUFFLED_INPUTS=1
+                NUM_SKIPPED_INPUTS=0
+                REDUCE_INPUT_GROUPS=5
+                REDUCE_INPUT_RECORDS=5
+                SHUFFLE_BYTES=127
+                SHUFFLE_BYTES_DECOMPRESSED=255
+                SHUFFLE_BYTES_DISK_DIRECT=127
+                SHUFFLE_BYTES_TO_DISK=0
+                SHUFFLE_BYTES_TO_MEM=0
+                SHUFFLE_PHASE_TIME=4
+                SPILLED_RECORDS=5
+        TaskCounter_scope_152_OUTPUT_scope_142
+                OUTPUT_RECORDS=5
+        org.apache.hadoop.mapreduce.TaskCounter
+                COMBINE_INPUT_RECORDS=6
+                COMBINE_OUTPUT_RECORDS=14
+        org.apache.hadoop.mapreduce.TaskCounter_scope_145_OUTPUT_scope_147
+                COMBINE_INPUT_RECORDS=1
+                COMBINE_OUTPUT_RECORDS=1
+        org.apache.hadoop.mapreduce.TaskCounter_scope_147_INPUT_scope_145
+                COMBINE_INPUT_RECORDS=0
+                COMBINE_OUTPUT_RECORDS=0
+        org.apache.hadoop.mapreduce.TaskCounter_scope_149_OUTPUT_scope_151
+                COMBINE_INPUT_RECORDS=5
+                COMBINE_OUTPUT_RECORDS=13
+        org.apache.hadoop.mapreduce.TaskCounter_scope_151_INPUT_scope_149
+                COMBINE_INPUT_RECORDS=0
+                COMBINE_OUTPUT_RECORDS=0
+2019-09-25 15:25:12,352 [main] INFO  org.apache.pig.tools.pigstats.tez.TezPigScriptStats - Script Statistics:
+
+       HadoopVersion: 2.7.3.2.6.2.0-205
+          PigVersion: 0.16.0.2.6.2.0-205
+          TezVersion: 0.7.0.2.6.2.0-205
+              UserId: vzpnpcem
+            FileName: /data05/CEM/SIT/scripts/stp_lte_sdr_agg_monthly.pig
+           StartedAt: 2019-09-25 15:24:50
+          FinishedAt: 2019-09-25 15:25:12
+            Features: GROUP_BY,FILTER,UNION
+
+Success!
+
+
+DAG 0:
+                                    Name: PigLatin:stp_lte_sdr_agg_monthly.pig-0_scope-0
+                           ApplicationId: job_1560906012335_271113
+                      TotalLaunchedTasks: 7
+                           FileBytesRead: 786
+                        FileBytesWritten: 1075
+                           HdfsBytesRead: 718
+                        HdfsBytesWritten: 99
+      SpillableMemoryManager spill count: 0
+                Bags proactively spilled: 0
+             Records proactively spilled: 0
+
+DAG Plan:
+Tez vertex scope-143    ->      Tez vertex scope-145,Tez vertex scope-149,
+Tez vertex scope-145    ->      Tez vertex scope-147,
+Tez vertex scope-147    ->      Tez vertex scope-148,
+Tez vertex scope-148    ->      Tez vertex group scope-209,
+Tez vertex scope-149    ->      Tez vertex scope-151,
+Tez vertex scope-151    ->      Tez vertex scope-152,
+Tez vertex scope-152    ->      Tez vertex group scope-209,
+Tez vertex group scope-209
+
+Vertex Stats:
+VertexId Parallelism TotalTasks   InputRecords   ReduceInputRecords  OutputRecords  FileBytesRead FileBytesWritten  HdfsBytesRead HdfsBytesWritten Alias        Feature Outputs
+scope-143          1          1             19                    0             28              0              436            718                0 daily_agg_enb,daily_agg_enb_month,daily_agg_enb_tbl
+scope-145          1          1             14                    0              1             32               99              0                0 1-19,daily_agg_enb_month_voice,daily_agg_enb_month_voice_grp,daily_agg_enb_month_voice_tbl
+scope-147         -1          1              0                    1              1             99              167              0                0 1-20,daily_agg_enb_month_voice_grp      GROUP_BY
+scope-148         -1          1              0                    1              1             68               68              0               38 daily_agg_enb_month_voice_max,max_record        GROUP_BY        /data/npicem/stp/LTE/stp_lte_sdr_agg_monthly/trans_mnth=082019,
+scope-149          1          1             14                    0             13            250              146              0                0 1-21,daily_agg_enb_month_data,daily_agg_enb_month_data_grp,daily_agg_enb_month_data_tbl
+scope-151         -1          1              0                    5              5            178              159              0                0 1-22,daily_agg_enb_month_data_grp       GROUP_BY
+scope-152         -1          1              0                    5              5            159                0              0               61 daily_agg_enb_month_data_max,max_record GROUP_BY        /data/npicem/stp/LTE/stp_lte_sdr_agg_monthly/trans_mnth=082019,
+
+Input(s):
+Successfully read 19 records (718 bytes) from: "npi_cem_db.stp_lte_sdr_agg_daily_test"
+
+Output(s):
+Successfully stored 6 records (99 bytes) in: "/data/npicem/stp/LTE/stp_lte_sdr_agg_monthly/trans_mnth=082019"
+
+2019-09-25 15:25:12,376 [main] INFO  org.apache.pig.Main - Pig script completed in 27 seconds and 473 milliseconds (27473 ms)
+2019-09-25 15:25:12,427 [main] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezLauncher - Shutting down thread pool
+2019-09-25 15:25:12,441 [pool-1-thread-1] INFO  org.apache.pig.backend.hadoop.executionengine.tez.TezSessionManager - Shutting down Tez session org.apache.tez.client.TezClient@61abf2e3
+2019-09-25 15:25:12 Shutting down Tez session , sessionName=PigLatin:stp_lte_sdr_agg_monthly.pig, applicationId=application_1560906012335_271113
+2019-09-25 15:25:12,442 [pool-1-thread-1] INFO  org.apache.tez.client.TezClient - Shutting down Tez Session, sessionName=PigLatin:stp_lte_sdr_agg_monthly.pig, applicationId=application_1560906012335_271113
+[stp_monthly_soi_enb_feed][28238][2019/09/25 15:25:12:977351470] [INFO]  Successfully aggregate SOI monthly at /data/npicem/stp/LTE/stp_lte_sdr_agg_monthly/trans_mnth=082019
+[stp_monthly_soi_enb_feed][28238][2019/09/25 15:25:12:983559734] [INFO]  Metasync Process start -------------
+Java HotSpot(TM) 64-Bit Server VM warning: ignoring option MaxPermSize=512m; support was removed in 8.0
+Java HotSpot(TM) 64-Bit Server VM warning: ignoring option MaxPermSize=512m; support was removed in 8.0
+2019-09-25 15:25:16,802 WARN  [main] conf.HiveConf: HiveConf of name hive.druid.broker.address.default does not exist
+2019-09-25 15:25:16,803 WARN  [main] conf.HiveConf: HiveConf of name hive.druid.metadata.password does not exist
+2019-09-25 15:25:16,804 WARN  [main] conf.HiveConf: HiveConf of name hive.druid.coordinator.address.default does not exist
+2019-09-25 15:25:16,805 WARN  [main] conf.HiveConf: HiveConf of name hive.druid.metadata.uri does not exist
+2019-09-25 15:25:16,805 WARN  [main] conf.HiveConf: HiveConf of name hive.druid.metadata.username does not exist
+2019-09-25 15:25:16,805 WARN  [main] conf.HiveConf: HiveConf of name hive.custom-extensions.root does not exist
+2019-09-25 15:25:16,805 WARN  [main] conf.HiveConf: HiveConf of name hive.semantic.analyzer.factory.impl does not exist
+log4j:WARN No such property [maxFileSize] in org.apache.log4j.DailyRollingFileAppender.
+
+Logging initialized using configuration in file:/etc/hive/2.6.2.0-205/0/hive-log4j.properties
+OK
+Partitions missing from filesystem:     stp_lte_sdr_agg_monthly:trans_mnth=081991
+Time taken: 1.389 seconds, Fetched: 1 row(s)
+[stp_monthly_soi_enb_feed][28238][2019/09/25 15:25:26:661562550] [INFO]  Metasync Process end -------------
+[stp_monthly_soi_enb_feed][28238][2019/09/25 15:25:26:668877006] [INFO]  ----- Process ENDS -----
