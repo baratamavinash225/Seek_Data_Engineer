@@ -50,7 +50,7 @@ SET tez.grouping.min-size 16777216;
 
 daily_agg_enb_tbl = LOAD '$source_schema.$source_table' USING org.apache.hive.hcatalog.pig.HCatLoader();
 daily_agg_enb = FOREACH daily_agg_enb_tbl GENERATE
-CONCAT(SUBSTRING(trans_dt, 4, 5),'-', SUBSTRING(trans_dt, 0, 3)) as trans_mnth:chararray,
+trans_dt as trans_dt:chararray,
 mdn as mdn:chararray,
 enb as enb:chararray,
 -- pdn as pdn:chararray,
@@ -64,7 +64,17 @@ secondsofuse as secondsofuse:long;
 
 -- 2. Filter records that are needed for a month
 
-daily_agg_enb_month = FILTER daily_agg_enb BY (trans_mnth matches '*$trans_month');
+daily_agg_enb_monthly = FILTER daily_agg_enb BY (trans_dt matches '*$trans_month');
+
+
+daily_agg_enb_month = FOREACH daily_agg_enb_monthly GENERATE
+trans_dt as trans_dt:chararray,
+CONCAT(SUBSTRING(trans_dt, 2, 3),'-', SUBSTRING(trans_dt, 4, 7)) as trans_mnth:chararray,
+mdn as mdn:chararray,
+enb as enb:chararray,
+usagetype as usagetype:chararray,
+totalmobilebytes as totalmobilebytes:long,
+secondsofuse as secondsofuse:long;
 
 
 -- ----------------------------------------------------------------------------------
