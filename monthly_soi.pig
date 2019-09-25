@@ -101,7 +101,7 @@ daily_agg_enb_month_voice_grp = FOREACH (GROUP daily_agg_enb_month_voice BY (mdn
                                                         group.trans_mnth AS trans_mnth,
                                                         group.mdn AS mdn,
                                                         group.usagetype AS usagetype,
-                                                        sum_seconds_of_use AS enb;
+                                                        MAX(sum_seconds_of_use) AS enb;
                         };
 
 daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (mdn, usagetype, trans_mnth))
@@ -111,7 +111,7 @@ daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (mdn, 
                                                         group.trans_mnth AS trans_mnth,
                                                         group.mdn AS mdn,
                                                         group.usagetype AS usagetype,
-                                                        sum_total_mobile_bytes AS enb;
+                                                        MAX(sum_total_mobile_bytes) AS enb;
                         };
 
 -- ---------------------------------------------------------------------------------------------------------------
