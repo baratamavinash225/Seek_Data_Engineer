@@ -131,7 +131,8 @@ daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (trans
                                                         GENERATE
                                                         group.trans_mnth AS trans_mnth,
                                                         group.mdn AS mdn,
-                                                        group.usagetype AS usagetype,
+                                                        group.mdn AS enb,
+														group.usagetype AS usagetype,
                                                         sum_total_mobile_bytes AS usage;
                         };
 
