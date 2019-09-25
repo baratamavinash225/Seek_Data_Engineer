@@ -64,7 +64,7 @@ secondsofuse as secondsofuse:long;
 
 -- 2. Filter records that are needed for a month
 
-daily_agg_enb_month = FILTER daily_agg_enb BY (trans_mnth matches '$trans_month*');
+daily_agg_enb_month = FILTER daily_agg_enb BY (trans_mnth matches '*$trans_month');
 
 
 -- ----------------------------------------------------------------------------------
