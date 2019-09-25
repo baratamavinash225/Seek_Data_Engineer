@@ -94,31 +94,72 @@ secondsofuse;
 -- ---------------------------------------------------------------------------------------------------------------
 -- 3.Max sum for ENB
 
-daily_agg_enb_month_voice_grp = FOREACH (GROUP daily_agg_enb_month_voice BY (mdn, usagetype, trans_mnth))
+daily_agg_enb_month_voice_grp = FOREACH (GROUP daily_agg_enb_month_voice BY (trans_mnth, mdn, enb, usagetype))
                         {
                                                         sum_seconds_of_use = SUM(daily_agg_enb_month_voice.secondsofuse);
                                                         GENERATE
                                                         group.trans_mnth AS trans_mnth,
                                                         group.mdn AS mdn,
+														group.enb AS enb,
                                                         group.usagetype AS usagetype,
-                                                        MAX(sum_seconds_of_use) AS enb;
+                                                        sum_seconds_of_use AS usage;
                         };
 
-daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (mdn, usagetype, trans_mnth))
+# daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY (trans_mnth, mdn, enb, usagetype))
+# 						{
+# 														max_seconds_of_use = MAX(daily_agg_enb_month_voice_grp.usage);
+# 														GENERATE
+# 														group.trans_mnth AS trans_mnth,
+#                                                         group.mdn AS mdn,
+#                                                         group.usagetype AS usagetype,
+#                                                         max_seconds_of_use AS enb;
+# 						}
+
+
+daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY (trans_mnth, mdn, enb, usagetype))
+								{
+									 ordered = ORDER daily_agg_enb_month_voice_grp BY usage DESC;
+									 max_record = LIMIT ordered 1;
+									 GENERATE FLATTEN(max_record);
+								}						
+
+DESCRIBE daily_agg_enb_month_voice_max;							
+						
+daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (trans_mnth, mdn, enb, usagetype))
                         {
                                                         sum_total_mobile_bytes = SUM(daily_agg_enb_month_data.totalmobilebytes);
                                                         GENERATE
                                                         group.trans_mnth AS trans_mnth,
                                                         group.mdn AS mdn,
                                                         group.usagetype AS usagetype,
-                                                        MAX(sum_total_mobile_bytes) AS enb;
+                                                        sum_total_mobile_bytes AS usage;
                         };
 
+						
+#daily_agg_enb_month_data_max = FOREACH (GROUP daily_agg_enb_month_data_grp BY (trans_mnth, mdn, enb, usagetype))
+#						{
+#														max_total_mobile_bytes = MAX(daily_agg_enb_month_data_grp.usage);
+#														GENERATE
+#														group.trans_mnth AS trans_mnth,
+#                                                       group.mdn AS mdn,
+#                                                       group.usagetype AS usagetype,
+#                                                       max_total_mobile_bytes AS enb;
+#						}
+
+daily_agg_enb_month_data_max = FOREACH (GROUP daily_agg_enb_month_data_grp BY (trans_mnth, mdn, enb, usagetype))
+								{
+									 ordered = ORDER daily_agg_enb_month_data_grp BY usage DESC;
+									 max_record = LIMIT ordered 1;
+									 GENERATE FLATTEN(max_record);
+								}						
+
+								
+DESCRIBE daily_agg_enb_month_data_max;	
 -- ---------------------------------------------------------------------------------------------------------------
 
 -- 4.Union of the records of voice and data
 
-monthly_agg_max_enb = UNION daily_agg_enb_month_voice_grp, daily_agg_enb_month_data_grp;
+monthly_agg_max_enb = UNION daily_agg_enb_month_voice_max, daily_agg_enb_month_data_max;
 
 -- ---------------------------------------------------------------------------------------------------------------
 --
