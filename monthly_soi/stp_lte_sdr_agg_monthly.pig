@@ -98,17 +98,6 @@ daily_agg_enb_month_voice_grp = FOREACH (GROUP daily_agg_enb_month_voice BY (tra
                                                         sum_seconds_of_use AS usage;
                         };
 
--- daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY (trans_mnth, mdn, enb, usagetype))
---                                              {
---                                                         max_seconds_of_use = MAX(daily_agg_enb_month_voice_grp.usage);
---                                                         GENERATE
---                                                         group.trans_mnth AS trans_mnth,
---                                                         group.mdn AS mdn,
---                                                         group.usagetype AS usagetype,
---                                                         max_seconds_of_use AS enb;
---                                              }
-
-
 daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY (trans_mnth, mdn, enb, usagetype))
                                                 {
                                                          ordered = ORDER daily_agg_enb_month_voice_grp BY usage DESC;
@@ -117,6 +106,12 @@ daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY 
                                                 }
 
 DESCRIBE daily_agg_enb_month_voice_max;
+
+daily_agg_enb_month_voice_max_records = FOREACH daily_agg_enb_month_voice_max GENERATE
+max_record::mdn as mdn:chararray,
+max_record::usagetype as usagetype:chararray,
+max_record::enb as enb:chararray;
+
 
 daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (trans_mnth, mdn, enb, usagetype))
                         {
@@ -130,15 +125,6 @@ daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (trans
                         };
 
 
---daily_agg_enb_month_data_max = FOREACH (GROUP daily_agg_enb_month_data_grp BY (trans_mnth, mdn, enb, usagetype))
---                                              {
---                                                       max_total_mobile_bytes = MAX(daily_agg_enb_month_data_grp.usage);
---                                                       GENERATE
---                                                       group.trans_mnth AS trans_mnth,
---                                                       group.mdn AS mdn,
---                                                       group.usagetype AS usagetype,
---                                                       max_total_mobile_bytes AS enb;
---                                              }
 
 daily_agg_enb_month_data_max = FOREACH (GROUP daily_agg_enb_month_data_grp BY (trans_mnth, mdn, enb, usagetype))
                                                 {
@@ -149,11 +135,17 @@ daily_agg_enb_month_data_max = FOREACH (GROUP daily_agg_enb_month_data_grp BY (t
 
 
 DESCRIBE daily_agg_enb_month_data_max;
+
+daily_agg_enb_month_data_max_records = FOREACH daily_agg_enb_month_data_max GENERATE
+max_record::mdn as mdn:chararray,
+max_record::usagetype as usagetype:chararray,
+max_record::enb as enb:chararray;
+
 -- ---------------------------------------------------------------------------------------------------------------
 
 -- 4.Union of the records of voice and data
 
-monthly_agg_max_enb = UNION daily_agg_enb_month_voice_max, daily_agg_enb_month_data_max;
+monthly_agg_max_enb = UNION daily_agg_enb_month_voice_max_records, daily_agg_enb_month_data_max_records;
 
 -- ---------------------------------------------------------------------------------------------------------------
 --
