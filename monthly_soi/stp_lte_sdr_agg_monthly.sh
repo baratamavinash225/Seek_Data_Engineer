@@ -207,7 +207,7 @@ ExtractAndSftp()
   
   file_name=`echo ${SOURCEFILE/mmyyyy/$trans_mnth}`
   
-  hdfs dfs -text $HDFSOUTPATH/trans_mnth=$trans_mnth/*  > $SFTPLOCAL/$file_name
+  hdfs dfs -text "$HDFSOUTPATH/trans_mnth=$trans_mnth/*"  > $SFTPLOCAL/$file_name
   
   if [[ $? -ne 0 ]]
   then
