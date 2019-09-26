@@ -108,6 +108,7 @@ daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY 
 DESCRIBE daily_agg_enb_month_voice_max;
 
 daily_agg_enb_month_voice_max_records = FOREACH daily_agg_enb_month_voice_max GENERATE
+max_record::trans_mnth as trans_mth:chararray,
 max_record::mdn as mdn:chararray,
 max_record::usagetype as usagetype:chararray,
 max_record::enb as enb:chararray;
@@ -137,6 +138,7 @@ daily_agg_enb_month_data_max = FOREACH (GROUP daily_agg_enb_month_data_grp BY (t
 DESCRIBE daily_agg_enb_month_data_max;
 
 daily_agg_enb_month_data_max_records = FOREACH daily_agg_enb_month_data_max GENERATE
+max_record::trans_mnth as trans_mth:chararray,
 max_record::mdn as mdn:chararray,
 max_record::usagetype as usagetype:chararray,
 max_record::enb as enb:chararray;
