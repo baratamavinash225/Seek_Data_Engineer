@@ -2,7 +2,7 @@
 
 # Author    : Akhilesh Varma
 # Purpose   : Used to aggregate SOI monthly data and store into hdfs path and to create hive table
-# Usage     : ./stp_monthly_soi_enb_feed.sh 201906
+# Usage     : ./stp_lte_sdr_agg_monthly.sh 201906
 
 if [[ -z $STPBASE ]]
 then
@@ -89,9 +89,9 @@ ValidateArgs()
   if [[ $# -eq 0 ]]
   then
     scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " No arguments passed, calculating the soi month based on current date by a month latency"
-    previousYearMonth=`date -d "$(date +%Y-%m-1) -1 month" +%Y%m`
+    previousYearMonth=`date -d "$(date +%Y-%m-1) -1 month" +%m%Y`
     scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Process starting for $previousYearMonth"
-    CoreLogic $previousYearMonth  
+    CoreLogic $previousYearMonth
   elif [[ $# -eq 1 ]]
   then
     #Only date is given
@@ -112,11 +112,11 @@ DropIfExistsHDFSPartition()
 {
   trans_mnth=$1
   hadoop fs -test -d "$HDFSOUTPATH/trans_mnth=$trans_mnth" >> $LOGFILE 2>&1
-  
+
   if [[ $? -ne 0 ]]
   then
     scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " NO prior partition found $HDFSOUTPATH/trans_mnth=$trans_mnth Good to go."
-	return 0
+        return 0
   else
     hadoop fs -rm -r -skipTrash "$HDFSOUTPATH/trans_mnth=$trans_mnth" >> $LOGFILE 2>&1
     if [[  $? -ne 0  ]]
@@ -133,33 +133,33 @@ DropIfExistsHDFSPartition()
 
 ################################################################################
 ################################################################################
-##### Function: RunSoiMonthlyRollup 
+##### Function: RunSoiMonthlyRollup
 RunSoiMonthlyRollup ()
 {
   trans_mnth=$1
   DropIfExistsHDFSPartition $trans_mnth
- 
-  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " 	/usr/bin/pig -Dexectype=$PIGMODE -useHCatalog \
-				   -param source_schema=$HIVE_SCHEMA \
-				   -param source_table=$SOURCE_TBL \
-				   -param trans_month=$trans_mnth \
-				   -param hdfs_out_path=$HDFSOUTPATH \
-				   -param out_delim=$OUTPUT_DELIMITER \
-				   -f $PIGSCRIPT >>$LOGFILE 2>&1"
- 
 
-		/usr/bin/pig -Dexectype=$PIGMODE -useHCatalog \
-				   -param source_schema=$HIVE_SCHEMA \
-				   -param source_table=$SOURCE_TBL \
-				   -param trans_month=$trans_mnth \
-				   -param hdfs_out_path=$HDFSOUTPATH \
-				   -param out_delim=$OUTPUT_DELIMITER \
-				   -f $PIGSCRIPT >>$LOGFILE 2>&1
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" "  /usr/bin/pig -Dexectype=$PIGMODE -useHCatalog \
+                                   -param source_schema=$HIVE_SCHEMA \
+                                   -param source_table=$SOURCE_TBL \
+                                   -param trans_month=$trans_mnth \
+                                   -param hdfs_out_path=$HDFSOUTPATH \
+                                   -param out_delim=$OUTPUT_DELIMITER \
+                                   -f $PIGSCRIPT >>$LOGFILE 2>&1"
+
+
+                /usr/bin/pig -Dexectype=$PIGMODE -useHCatalog \
+                                   -param source_schema=$HIVE_SCHEMA \
+                                   -param source_table=$SOURCE_TBL \
+                                   -param trans_mnth=$trans_mnth \
+                                   -param hdfs_out_path=$HDFSOUTPATH \
+                                   -param out_delim=$OUTPUT_DELIMITER \
+                                   -f $PIGSCRIPT >>$LOGFILE 2>&1
 
   if [[ $? -ne 0 ]]
   then
     scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed to aggregate SOI monthly feed at $HDFSOUTPATH/trans_mnth=$trans_mnth. See log for more details."
-	return 1
+        return 1
   else
     scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully aggregate SOI monthly at $HDFSOUTPATH/trans_mnth=$trans_mnth"
     scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Metasync Process start -------------"
@@ -169,7 +169,7 @@ RunSoiMonthlyRollup ()
     then
       scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Metasync Process Failed ------------"
       return 1
-   fi 
+   fi
     scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Metasync Process end -------------"
 
     return 0
@@ -179,11 +179,11 @@ RunSoiMonthlyRollup ()
 ################################################################################
 ##### Function: CheckIfExistsHDFSPath
 CheckIfExistsHDFSPath()
-{ 
+{
   hadoop fs -test -d "$1"
   if [[ $? -ne 0 ]]
   then
-    scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " OUTPUT path not found at $1. Exiting." 
+    scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " OUTPUT path not found at $1. Exiting."
     exit 1
   else
     scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " OUTPUT path found at $1  Good to go."
@@ -197,7 +197,7 @@ CheckIfExistsHDFSPath()
 CoreLogic()
 {
   trans_mnth=$1
- 
+
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Beginning the processing for SOI MONTHLY FEED for $trans_mnth"
   #CheckIfExistsHDFSPath $HDFSINPUTPATH/trans_mnth=$trans_mnth
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Checking SOI Monthly feed path in HDFS"
@@ -217,9 +217,9 @@ Main()
   InstanceCheck
 
   WritePIDFile
- 
+
   ValidateArgs $@
-  rm -rf $PIDFILE >>$LOGFILE 2>&1 
+  rm -rf $PIDFILE >>$LOGFILE 2>&1
   scriptLogger $LOGFILE $PROCESS $$  "[INFO]" " ----- Process ENDS -----"
 }
 
