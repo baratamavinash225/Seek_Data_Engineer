@@ -210,10 +210,10 @@ ExtractAndSftp()
   rm -f $SFTPLOCAL/$file_name
   hadoop fs -rm -f $file_name
   
-  hadoop fs dfs -text $HDFSOUTPATH/trans_mnth=$trans_mnth/* | hadoop fs -put -f - $file_name
+  hadoop fs -text $HDFSOUTPATH/trans_mnth=$trans_mnth/* | hadoop fs -put -f - $file_name
   if [[ $? -ne 0 ]]
   then
-    scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed extracting file from hdfs to local"
+    scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed extracting file from hdfs to hdfs"
         return 1
   else
   
@@ -264,7 +264,7 @@ Main()
   scriptLogger $LOGFILE $PROCESS $$  "[INFO]" " ----- Process START -----"
 
   InstanceCheck
-
+  mkdir -p $SFTPLOCAL
   WritePIDFile
 
   ValidateArgs $@
