@@ -30,6 +30,12 @@ HDFSINPUTPATH=$STP_MONTHLY_SOI_ENB_FEED_HDFS_PATH
 HDFSOUTPATH=$STP_MONTHLY_SOI_ENB_FEED_HDFS_PATH
 TARGETTABLE=$STP_MONTHLY_SOI_ENB_FEED_EXT_TABLE
 OUTPUT_DELIMITER=$STP_MONTHLY_SOI_ENB_FEED_DELIM
+SFTPUSER=$STP_RTT_EXTRACT_SOI_DELTA_USER_ID
+SFTPDESTINATIONFOLDER=$STP_RTT_EXTRACT_SOI_DELTA_DESTINATION_DIRECTORY
+SFTPDESTINATIONSERVER=$STP_RTT_EXTRACT_SOI_DELTA_SERVER_NAME
+SOURCEFILE=$STP_MONTHLY_SOI_ENB_EXTRACT
+SFTPLOCAL=$STP_MONTHLY_SOI_ENB_EXTRACT_FOLDER
+
 
 ### Declare Global Variables
 ################################################################################
@@ -193,6 +199,41 @@ CheckIfExistsHDFSPath()
 
 ################################################################################
 ################################################################################
+##### Function: ExtractAndSftp
+ExtractAndSftp()
+{
+  trans_mnth=$1
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Started extracting file from hdfs to local"
+  
+  file_name=`echo ${SOURCEFILE/mmyyyy/$trans_mnth}`
+  
+  hdfs dfs -text $HDFSOUTPATH/trans_mnth=$trans_mnth  > $SFTPLOCAL/$file_name
+  
+  if [[ $? -ne 0 ]]
+  then
+    scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed extracting file from hdfs to local"
+        return 1
+  else
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully extracted file from hdfs to local"
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Started sending extracted file to the destination server via sftp"
+  
+  
+  
+  sftp $SFTPUSER@$SFTPDESTINATIONSERVER:$SFTPDESTINATIONFOLDER $SFTPLOCAL/$file_name
+  if [[ $? -ne 0 ]]
+  then
+    scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed to transfer files through sftp"
+        return 1
+  fi
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully sent files to destination server via sftp"
+    return 0
+	fi
+}
+
+
+
+################################################################################
+################################################################################
 ##### Function: CoreLogic
 CoreLogic()
 {
@@ -202,6 +243,7 @@ CoreLogic()
   #CheckIfExistsHDFSPath $HDFSINPUTPATH/trans_mnth=$trans_mnth
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Checking SOI Monthly feed path in HDFS"
   RunSoiMonthlyRollup $trans_mnth
+  ExtractAndSftp $trans_mnth
   rm -f $PIDFILE
   return $?
 }
