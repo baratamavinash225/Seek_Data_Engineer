@@ -207,17 +207,24 @@ ExtractAndSftp()
   
   file_name=`echo ${SOURCEFILE/mmyyyy/$trans_mnth}`
   
-  hdfs dfs -text "$HDFSOUTPATH/trans_mnth=$trans_mnth/*"  > $SFTPLOCAL/$file_name
+  rm -f $SFTPLOCAL/$file_name
+  hadoop fs -rm -f $file_name
   
+  hadoop fs dfs -text $HDFSOUTPATH/trans_mnth=$trans_mnth/* | hadoop fs -put -f - $file_name
   if [[ $? -ne 0 ]]
   then
     scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed extracting file from hdfs to local"
         return 1
   else
+  
+  hadoop fs -copyToLocal -f $file_name $SFTPLOCAL/$file_name
+  if [[ $? -ne 0 ]]
+  then
+    scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed extracting file from hdfs to local"
+        return 1
+  fi
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully extracted file from hdfs to local"
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Started sending extracted file to the destination server via sftp"
-  
-  
   
   sftp $SFTPUSER@$SFTPDESTINATIONSERVER:$SFTPDESTINATIONFOLDER $SFTPLOCAL/$file_name
   if [[ $? -ne 0 ]]
