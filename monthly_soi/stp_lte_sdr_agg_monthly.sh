@@ -217,7 +217,7 @@ ExtractAndSftp()
         return 1
   else
   
-  hadoop fs -copyToLocal -f $file_name $SFTPLOCAL/$file_name
+  hadoop fs -copyToLocal $file_name $SFTPLOCAL/$file_name
   if [[ $? -ne 0 ]]
   then
     scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed extracting file from hdfs to local"
