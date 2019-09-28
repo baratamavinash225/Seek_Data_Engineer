@@ -21,6 +21,7 @@ Usage()
 
 PROCESS="stp_monthly_soi_enb_feed"
 LOGFILE=$STP_MONTHLY_SOI_ENB_FEED_LOG_FILE
+LOGDIR=$STP_MONTHLY_SOI_ENB_FEED_LOG_DIR
 PIDFILE=$STP_MONTHLY_SOI_ENB_FEED_PID_FILE
 HIVE_SCHEMA=$STP_SOI_ENB_FEED_HIVE_TABLE_SCHEMA
 SOURCE_TBL=$STP_LTE_SDR_AGG_DAILY
@@ -160,7 +161,7 @@ RunSoiMonthlyRollup ()
 								   -param last_trans_dt=$last_trans_dt \
                                    -param hdfs_out_path=$HDFSOUTPATH \
                                    -param out_delim=$OUTPUT_DELIMITER \
-                                   -f $PIGSCRIPT >>$LOGFILE 2>&1"
+                                   -f $PIGSCRIPT >> $LOGDIR/$LOGFILE 2>&1"
 
 
                 /usr/bin/pig -Dexectype=$PIGMODE -useHCatalog \
@@ -171,7 +172,7 @@ RunSoiMonthlyRollup ()
 								   -param last_trans_dt=$last_trans_dt \
                                    -param hdfs_out_path=$HDFSOUTPATH \
                                    -param out_delim=$OUTPUT_DELIMITER \
-                                   -f $PIGSCRIPT >>$LOGFILE 2>&1
+                                   -f $PIGSCRIPT >> $LOGDIR/$LOGFILE 2>&1
 
   if [[ $? -ne 0 ]]
   then
