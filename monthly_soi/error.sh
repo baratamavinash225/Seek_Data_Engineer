@@ -95,7 +95,7 @@ ValidateArgs()
   if [[ $# -eq 0 ]]
   then
     scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " No arguments passed, calculating the soi month first and last dates based on current date by a month latency"
-	previousYearMonth=`date -d "$(date +%Y-%m-1) -1 month" +%Y%-m`
+	previousYearMonth=$(date -d "`date +%Y%m01` -1 month" +%Y-%m)
 	previousMonthFirstDay=$(date -d "`date +%Y%m01` -1 month" +%Y-%m-%d)
 	previousMonthLastDay=$(date -d "`date +%Y%m01` -1 day" +%Y-%m-%d)
     scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Process starting for $previousYearMonth"
