@@ -79,7 +79,7 @@ WritePIDFile()
 ##### Function: validateDateMonth
 validateDateMonth()
 {
-  if echo $1 | egrep -q '^[0-9]{4}[0-9]{2}$'
+  if echo $1 | egrep -q '^[0-9]{4}-[0-9]{2}$'
   then
     scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Valid argument. Proceeding to process"
   else
@@ -94,18 +94,23 @@ ValidateArgs()
 {
   if [[ $# -eq 0 ]]
   then
-    scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " No arguments passed, calculating the soi month based on current date by a month latency"
-    previousYearMonth=`date -d "$(date +%Y-%m-1) -1 month" +%m%Y`
+    scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " No arguments passed, calculating the soi month first and last dates based on current date by a month latency"
+	previousYearMonth=`date -d "$(date +%Y-%m-1) -1 month" +%Y%-m`
+	previousMonthFirstDay=$(date -d "`date +%Y%m01` -1 month" +%Y-%m-%d)
+	previousMonthLastDay=$(date -d "`date +%Y%m01` -1 day" +%Y-%m-%d)
     scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Process starting for $previousYearMonth"
-    CoreLogic $previousYearMonth
+    CoreLogic $previousYearMonth $previousMonthFirstDay $previousMonthLastDay
   elif [[ $# -eq 1 ]]
   then
     #Only date is given
     monthYearToRun=$1
+	previousMonthFirstDay=`echo $monthYearToRun"-01"`
+	#previousMonthLastDay=$(date -d "`date +%Y%m01` -1 day" +%Y-%m-%d)
+	previousMonthLastDay=$(date -d "`date +$previousMonthFirstDay` +1 month -1 day" +%Y-%m-%d)
     validateDateMonth $monthYearToRun
     #Loop for all Hrs in a day
     scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Only trans_mnth=$monthYearToRun argument is passed, preparing to run for $monthYearToRun"
-    CoreLogic $monthYearToRun
+    CoreLogic $monthYearToRun $previousMonthFirstDay $previousMonthLastDay
      else
     Usage
   fi
@@ -143,12 +148,16 @@ DropIfExistsHDFSPartition()
 RunSoiMonthlyRollup ()
 {
   trans_mnth=$1
+  first_trans_dt=$2
+  last_trans_dt=$3
   DropIfExistsHDFSPartition $trans_mnth
 
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" "  /usr/bin/pig -Dexectype=$PIGMODE -useHCatalog \
                                    -param source_schema=$HIVE_SCHEMA \
                                    -param source_table=$SOURCE_TBL \
                                    -param trans_month=$trans_mnth \
+								   -param first_trans_dt=$first_trans_dt \
+								   -param last_trans_dt=$last_trans_dt \
                                    -param hdfs_out_path=$HDFSOUTPATH \
                                    -param out_delim=$OUTPUT_DELIMITER \
                                    -f $PIGSCRIPT >>$LOGFILE 2>&1"
@@ -158,6 +167,8 @@ RunSoiMonthlyRollup ()
                                    -param source_schema=$HIVE_SCHEMA \
                                    -param source_table=$SOURCE_TBL \
                                    -param trans_mnth=$trans_mnth \
+								   -param first_trans_dt=$first_trans_dt \
+								   -param last_trans_dt=$last_trans_dt \
                                    -param hdfs_out_path=$HDFSOUTPATH \
                                    -param out_delim=$OUTPUT_DELIMITER \
                                    -f $PIGSCRIPT >>$LOGFILE 2>&1
@@ -245,11 +256,13 @@ ExtractAndSftp()
 CoreLogic()
 {
   trans_mnth=$1
+  first_trans_dt=$2
+  last_trans_dt=$3
 
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Beginning the processing for SOI MONTHLY FEED for $trans_mnth"
   #CheckIfExistsHDFSPath $HDFSINPUTPATH/trans_mnth=$trans_mnth
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Checking SOI Monthly feed path in HDFS"
-  RunSoiMonthlyRollup $trans_mnth
+  RunSoiMonthlyRollup $trans_mnth $first_trans_dt $last_trans_dt
   ExtractAndSftp $trans_mnth
   rm -f $PIDFILE
   return $?
