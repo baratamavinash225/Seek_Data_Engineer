@@ -155,7 +155,7 @@ RunSoiMonthlyRollup ()
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" "  /usr/bin/pig -Dexectype=$PIGMODE -useHCatalog \
                                    -param source_schema=$HIVE_SCHEMA \
                                    -param source_table=$SOURCE_TBL \
-                                   -param trans_month=$trans_mnth \
+                                   -param trans_mnth=$trans_mnth \
 								   -param first_trans_dt=$first_trans_dt \
 								   -param last_trans_dt=$last_trans_dt \
                                    -param hdfs_out_path=$HDFSOUTPATH \
@@ -263,7 +263,11 @@ CoreLogic()
   #CheckIfExistsHDFSPath $HDFSINPUTPATH/trans_mnth=$trans_mnth
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Checking SOI Monthly feed path in HDFS"
   RunSoiMonthlyRollup $trans_mnth $first_trans_dt $last_trans_dt
-  ExtractAndSftp $trans_mnth
+  if [[ $? -eq 0 ]]
+  then
+	scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Started sftp"
+	ExtractAndSftp $trans_mnth
+  fi
   rm -f $PIDFILE
   return $?
 }
