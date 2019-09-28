@@ -12,7 +12,7 @@
 -- Author      : Akhilesh Varma
 --
 -- Usage:
---   pig -Dmapred.job.queue.name=etl-pig -x tez -useHCatalog -f stp_monthly_soi_enb_feed.pig -param source_schema='npi_cem_db' -param source_table='<daily_feed_table>' -param trans_month='2019-06' -param first_trans_dt='2019-08-01' -param last_trans_dt='2019-08-31' -param hdfs_out_path='/data/npicem/stp/RTT/stp_monthly_soi_enb' -param out_delim='|'
+--   pig -Dmapred.job.queue.name=etl-pig -x tez -useHCatalog -f stp_monthly_soi_enb_feed.pig -param source_schema='npi_cem_db' -param source_table='<daily_feed_table>' -param trans_mnth='2019-06' -param first_trans_dt='2019-08-01' -param last_trans_dt='2019-08-31' -param hdfs_out_path='/data/npicem/stp/RTT/stp_monthly_soi_enb' -param out_delim='|'
  
 -- ----------------------------------------------------------------------------------
 -- THE STORY --
@@ -56,7 +56,7 @@ daily_agg_enb = FILTER daily_agg_enb_tbl BY (trans_dt >='$first_trans_dt' and tr
 
 daily_agg_enb_month = FOREACH daily_agg_enb GENERATE
 -- CONCAT(SUBSTRING(trans_dt, 2, 4),'-', SUBSTRING(trans_dt, 4, 8)) as trans_mnth:chararray,
-'$trans_month' as trans_mnth:chararray,
+'$trans_mnth' as trans_mnth:chararray,
 mdn as mdn:chararray,
 enb as enb:chararray,
 usagetype as usagetype:chararray,
