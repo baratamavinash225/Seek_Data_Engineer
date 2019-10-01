@@ -38,6 +38,7 @@ SFTPDESTINATIONSERVER=ey9omprna021.vzbi.com
 #SFTPDESTINATIONSERVER=$STP_RTT_EXTRACT_SOI_DELTA_SERVER_NAME
 SOURCEFILE=$STP_MONTHLY_SOI_ENB_EXTRACT
 SFTPLOCAL=$STP_MONTHLY_SOI_ENB_EXTRACT_FOLDER
+HEADERVARIABLE=$STP_MONTHLY_SOI_ENB_FEED_HEADER
 
 
 ### Declare Global Variables
@@ -241,7 +242,7 @@ ExtractAndSftp()
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully extracted file from hdfs to local"
   
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Adding header to the file"
-  headerValue="mdn|usagetype|enb|trans_mnth\n"
+  headerValue=$HEADERVARIABLE
   sed -i "1s/^/$headerValue/" $SFTPLOCAL/$file_name
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully added header to the file"
   
