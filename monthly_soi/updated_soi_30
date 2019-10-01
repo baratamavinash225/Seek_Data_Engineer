@@ -232,12 +232,19 @@ ExtractAndSftp()
   else
 
   hadoop fs -copyToLocal $file_name $SFTPLOCAL/$file_name
+
   if [[ $? -ne 0 ]]
   then
     scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed extracting file from hdfs to local"
         return 1
   fi
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully extracted file from hdfs to local"
+  
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Adding header to the file"
+  headerValue="mdn|usagetype|enb|trans_mnth\n"
+  sed -i "1s/^/$headerValue/" $SFTPLOCAL/$file_name
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully added header to the file"
+  
   scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Started sending extracted file to the destination server via sftp"
 chmod 755 -R $SFTPLOCAL/$file_name
 sftp  $SFTPUSER@$SFTPDESTINATIONSERVER <<EOF
