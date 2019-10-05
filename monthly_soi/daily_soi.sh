@@ -31,6 +31,15 @@ TARGET_SCHEMA=$STP_LTE_SDR_AGG_DAILY_TARGET_HIVEDB
 OUTTBL=$STP_LTE_SDR_AGG_DAILY_TARGET_HIVE_TABLE
 CTLFILE=$STP_LTE_SDR_AGG_DAILY_CTL_FILE
 LATENCYMINS=$STP_LTE_SDR_AGG_DAILY_LATENCY_MIN
+SOURCEFILE=$STP_DAILY_SOI_ENB_EXTRACT
+SFTPLOCAL=$STP_DAILY_SOI_ENB_EXTRACT_FOLDER
+HEADERVARIABLE=$STP_DAILY_SOI_ENB_FEED_HEADER
+SFTPUSER=tekuvi
+#SFTPUSER=$STP_RTT_EXTRACT_SOI_DELTA_USER_ID
+SFTPDESTINATIONFOLDER=/data04/npidev/vteku
+#SFTPDESTINATIONFOLDER=$STP_RTT_EXTRACT_SOI_DELTA_DESTINATION_DIRECTORY
+SFTPDESTINATIONSERVER=ey9omprna021.vzbi.com
+#SFTPDESTINATIONSERVER=$STP_RTT_EXTRACT_SOI_DELTA_SERVER_NAME
 
 ################################################################################
 ################################################################################
@@ -220,6 +229,62 @@ CoreLogic()
   return $?
 }
 
+
+################################################################################
+################################################################################
+##### Function: ExtractAndSftp
+ExtractAndSftp()
+{
+  #$run_Date
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Started extracting file from hdfs to local"
+
+  file_name=`echo ${SOURCEFILE/mmmm-dd-yy/$run_Date}`
+
+  rm -f $SFTPLOCAL/$file_name
+  hadoop fs -rm -f $file_name
+
+  hadoop fs -text $HDFSOUTDIR/trans_dt=$run_Date/* | hadoop fs -put -f - $file_name
+  if [[ $? -ne 0 ]]
+  then
+    scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed extracting file from hdfs to hdfs"
+        return 1
+  else
+
+  hadoop fs -copyToLocal $file_name $SFTPLOCAL/$file_name
+
+  if [[ $? -ne 0 ]]
+  then
+    scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed extracting file from hdfs to local"
+        return 1
+  fi
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully extracted file from hdfs to local"
+  
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Adding header to the file"
+  headerValue=$HEADERVARIABLE
+  sed -i "1s/^/$headerValue/" $SFTPLOCAL/$file_name
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully added header to the file"
+  
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Started sending extracted file to the destination server via sftp"
+chmod 755 -R $SFTPLOCAL/$file_name
+sftp  $SFTPUSER@$SFTPDESTINATIONSERVER <<EOF
+    put $SFTPLOCAL/$file_name $SFTPDESTINATIONFOLDER
+EOF
+  if [[ $? -ne 0 ]]
+  then
+    scriptLogger $LOGFILE $PROCESS $$ "[ERROR]" " Failed to transfer files through sftp"
+        return 1
+  fi
+  scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Successfully sent files to destination server via sftp"
+    return 0
+        fi
+}
+
+
+
+################################################################################
+################################################################################
+
+
 ################################################################################
 ################################################################################
 ##### Function: ValidateArgs
@@ -265,6 +330,9 @@ Main()
   ValidateArgs $@
 
   CoreLogic $@
+  
+  ExtractAndSftp $@
+  
 }
 
 #################################################################################
