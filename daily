@@ -1,0 +1,395 @@
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--
+-- Script name: stp_rtt_load_vmas_scores_daily.pig
+--
+-- Description: This script is used to roll up RTT VMAS kpi scores to subscriber_id level
+--
+--USAGE: pig -useHCatalog  -f 'stp_rtt_load_vmas_scores_daily.pig' -param inputpath=='$STPHDFSBASE/VMAS/RTT_VUE/daily/RTT_Daily_$score_date*csv.gz' -param delim=',' -param dbschema=$STPSCHEMA -param subscriber_profile=$STP_RTT_LOAD_VMAS_SUBSCRIBER_PROFILE_HIVE_TABLE -param outputpath=$STP_RTT_LOAD_SUBSCRIBER_VMAS_KPI_RAW_AGG_DAILY_HDFS_OP_PATH/score_date=$date -param raw_outputpath=$STP_RTT_LOAD_SUBSCRIBER_VMAS_KPI_AGG_RAW_DAILY_HDFS_OP_PATH/score_date=$date >>$LOGFILE 2>&1-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SET pig.tmpfilecompression false;
+SET opt.multiquery false;
+SET hive.exec.orc.split.strategy BI;
+SET pig.optimizer.rules.disabled 'ColumnMapKeyPrune';
+
+SET mapreduce.map.java.opts -Xmx3072M;
+SET mapreduce.task.io.sort.mb 1024;
+SET pig.maxCombinedSplitSize 67108864;
+SET mapreduce.map.memory.mb 4096;
+SET mapreduce.reduce.java.opts -Xmx6144M;
+SET mapreduce.reduce.memory.mb 8192;
+SET mapred.output.compress true;
+SET mapreduce.job.reduce.slowstart.completedmaps 0.90;
+
+SET ipc.maximum.data.length 268435456;
+SET pig.tez.opt.union false;
+SET tez.am.container.idle.release-timeout-min.millis 5000;
+SET tez.am.container.idle.release-timeout-max.millis 10000;
+SET tez.am.resource.memory.mb 8192;
+SET tez.task.resource.memory.mb 8192;
+SET tez.runtime.io.sort.mb 1024;
+SET tez.runtime.unordered.output.buffer.size-mb 2048;
+SET tez.grouping.min-size 16777216;
+
+--Loading RTT VMAS kpi's and scores from hdfs 
+
+load_rtt_vmas_kpi_score = LOAD '$inputpath' USING PigStorage('$delim') 
+                                               AS (score_date:chararray,
+                                                   mdn:chararray,
+                                                   imsi:chararray,
+                                                   imei:chararray,
+                                                   make:chararray,
+                                                   model:chararray,
+                                                   attach_failure_pct:double,
+                                                   attach_failure_cnt:long,
+                                                   attach_attempts_cnt:long,
+                                                   rrc_setup_failure_pct:double,
+                                                   rrc_setup_failure_cnt:long,
+                                                   rrc_setup_attempts_cnt:long,
+                                                   srf_pct:double,
+                                                   service_request_failures_cnt:long,
+                                                   service_request_attempts_cnt:long,
+                                                   pcf_pct:double,
+                                                   session_setup_failures_cnt:long,
+                                                   session_setup_attempts_cnt:long,
+                                                   cd_pct:double,
+                                                   context_drops_cnt:long,
+                                                   context_events_cnt:long,
+                                                   sip_dropped_calls_pct:double,
+                                                   volte_voice_calls_dropped_cnt:long,
+                                                   volte_voice_setup_incomplete_calls_cnt:long,
+                                                   rrc_radio_drop_pct:double,
+                                                   radio_bearer_drops_cnt:long,
+                                                   radio_bearer_setup_attempts_cnt:long,
+                                                   downlink_throughput_kbps:double,
+                                                   uplink_throughput_kbps:double,
+                                                   downlink_data_volume:long,
+                                                   downlink_active_time_ms:long,
+                                                   uplink_data_volume:long,
+                                                   uplink_active_time_ms:long,
+                                                   travelling_indicator:long,
+                                                   volume_weighted_uplink_thpt_kbps:double,
+                                                   volume_weighted_downlink_thpt_kbps:double,
+                                                   load_time:chararray,
+                                                   subscriber_id:long,
+                                                   callattempts_network:int,
+                                                   callattempts_wifi:int,
+                                                   calldropincludingho_network:int,
+                                                   calldropincludingho_wifi:int,
+                                                   seer_network:int,
+                                                   seer_wifi:int,
+                                                   callswithaleg_network:int,
+                                                   callswithaleg_wifi:int,
+                                                   attempts_network:int,
+                                                   attempts_wifi:int,
+                                                   failures_network:int,
+                                                   failures_wifi:int,
+                                                   secondsofuse_network:long,
+                                                   secondsofuse_wifi:long,
+                                                   totalgaplength_network_uplink:long,
+                                                   totalgaplength_network_downlink:long,
+                                                   totalgaplength_wifi_uplink:long,
+                                                   totalgaplength_wifi_downlink:long,
+                                                   callduration_network_uplink:long,
+                                                   callduration_network_downlink:long,
+                                                   callduration_wifi_uplink:long,
+                                                   callduration_wifi_downlink:long,
+                                                   mos_network_downlink_num:double,
+                                                   mos_network_uplink_num:double,
+                                                   mos_wifi_downlink_num:double,
+                                                   mos_wifi_uplink_num:double,
+                                                   mos_network_downlink_den:long,
+                                                   mos_network_uplink_den:long,
+                                                   mos_wifi_downlink_den:long,
+                                                   mos_wifi_uplink_den:long,
+                                                   mos_network_downlink:double,
+                                                   mos_network_uplink:double,
+                                                   mos_wifi_downlink:double,
+                                                   mos_wifi_uplink:double,
+                                                   sipcalldroprateincludingho_network:double,
+                                                   sipcalldroprateincludingho_wifi:double,
+                                                   seer_kpi_network:double,
+                                                   seer_kpi_wifi:double,
+                                                   rtpgapratio_network_uplink:double,
+                                                   rtpgapratio_network_downlink:double,
+                                                   rtpgapratio_wifi_uplink:double,
+                                                   rtpgapratio_wifi_downlink:double,
+                                                   attach_failure_pct_weight:double,
+                                                   rrc_setup_failure_pct_weight:double,
+                                                   srf_pct_weight:double,
+                                                   pcf_pct_weight:double,
+                                                   cd_pct_weight:double,
+                                                   rrc_radio_drop_pct_weight:double,
+                                                   uplink_throughput_kbps_weight:double,
+                                                   downlink_throughput_kbps_weight:double,
+                                                   sipcalldroprateincludingho_network_weight:double,
+                                                   seer_kpi_network_weight:double,
+                                                   rtpgapratio_network_uplink_weight:double,
+                                                   rtpgapratio_network_downlink_weight:double,
+                                                   sipcalldroprateincludingho_wifi_weight:double,
+                                                   seer_kpi_wifi_weight:double,
+                                                   rtpgapratio_wifi_uplink_weight:double,
+                                                   rtpgapratio_wifi_downlink_weight:double,
+                                                   data_reliability:double,
+                                                   data_performance:double,
+                                                   hd_voice_network_reliability:double,
+                                                   hd_voice_network_performance:double,
+                                                   hd_voice_wifi_reliability:double,
+                                                   hd_voice_wifi_performance:double,
+                                                   hd_voice_reliability:double,
+                                                   hd_voice_performance:double,
+                                                   all_service:double,
+                                                   preference_ratio:double,
+						   data_wifi_performance:double,
+						   data_wifi_reliability:double,
+						   data_network_performance:double,
+						   data_network_reliability:double,
+                                                   trans_dt:chararray);
+
+-- skip header of RTT VMAS scores
+filter_rtt_kpi_scores = FILTER load_rtt_vmas_kpi_score 
+                            BY score_date != 'trans_date';
+
+--Modify order of fields
+
+update_rtt_kpi_score_schema =  FOREACH filter_rtt_kpi_scores 
+                              GENERATE score_date,
+                                       subscriber_id,
+                                       mdn,
+                                       imsi,
+                                       imei,
+                                       make,
+                                       model,
+                                       trans_dt AS trans_date:chararray,
+                                       ToString(CurrentTime(),'yyyyMMdd HH:mm:ss') AS load_time,
+                                       attach_failure_pct,
+                                       attach_failure_cnt,
+                                       attach_attempts_cnt,
+                                       rrc_setup_failure_pct,
+                                       rrc_setup_failure_cnt,
+                                       rrc_setup_attempts_cnt,
+                                       srf_pct,
+                                       service_request_failures_cnt,
+                                       service_request_attempts_cnt,
+                                       pcf_pct,
+                                       session_setup_failures_cnt,
+                                       session_setup_attempts_cnt,
+                                       cd_pct,
+                                       context_drops_cnt,
+                                       context_events_cnt,
+                                       sip_dropped_calls_pct,
+                                       volte_voice_calls_dropped_cnt,
+                                       volte_voice_setup_incomplete_calls_cnt,
+                                       rrc_radio_drop_pct,
+                                       radio_bearer_drops_cnt,
+                                       radio_bearer_setup_attempts_cnt,
+                                       downlink_throughput_kbps,
+                                       uplink_throughput_kbps,
+                                       downlink_data_volume,
+                                       downlink_active_time_ms,
+                                       uplink_data_volume,
+                                       uplink_active_time_ms,
+                                       travelling_indicator,
+                                       volume_weighted_uplink_thpt_kbps,
+                                       volume_weighted_downlink_thpt_kbps,
+                                       callattempts_network,
+                                       callattempts_wifi,
+                                       calldropincludingho_network,
+                                       calldropincludingho_wifi,
+                                       seer_network,
+                                       seer_wifi,
+                                       callswithaleg_network,
+                                       callswithaleg_wifi,
+                                       attempts_network,
+                                       attempts_wifi,
+                                       failures_network,
+                                       failures_wifi,
+                                       secondsofuse_network,
+                                       secondsofuse_wifi,
+                                       totalgaplength_network_uplink,
+                                       totalgaplength_network_downlink,
+                                       totalgaplength_wifi_uplink,
+                                       totalgaplength_wifi_downlink,
+                                       callduration_network_uplink,
+                                       callduration_network_downlink,
+                                       callduration_wifi_uplink,
+                                       callduration_wifi_downlink,
+                                       mos_network_downlink_num,
+                                       mos_network_uplink_num,
+                                       mos_wifi_downlink_num,
+                                       mos_wifi_uplink_num,
+                                       mos_network_downlink_den,
+                                       mos_network_uplink_den,
+                                       mos_wifi_downlink_den,
+                                       mos_wifi_uplink_den,
+                                       mos_network_downlink,
+                                       mos_network_uplink,
+                                       mos_wifi_downlink,
+                                       mos_wifi_uplink,
+                                       sipcalldroprateincludingho_network,
+                                       sipcalldroprateincludingho_wifi,
+                                       seer_kpi_network,
+                                       seer_kpi_wifi,
+                                       rtpgapratio_network_uplink,
+                                       rtpgapratio_network_downlink,
+                                       rtpgapratio_wifi_uplink,
+                                       rtpgapratio_wifi_downlink,
+                                       attach_failure_pct_weight,
+                                       rrc_setup_failure_pct_weight,
+                                       srf_pct_weight,
+                                       pcf_pct_weight,
+                                       cd_pct_weight,
+                                       rrc_radio_drop_pct_weight,
+                                       uplink_throughput_kbps_weight,
+                                       downlink_throughput_kbps_weight,
+                                       sipcalldroprateincludingho_network_weight,
+                                       seer_kpi_network_weight,
+                                       rtpgapratio_network_uplink_weight,
+                                       rtpgapratio_network_downlink_weight,
+                                       sipcalldroprateincludingho_wifi_weight,
+                                       seer_kpi_wifi_weight,
+                                       rtpgapratio_wifi_uplink_weight,
+                                       rtpgapratio_wifi_downlink_weight,
+                                       data_reliability,
+                                       data_performance,
+                                       hd_voice_network_reliability,
+                                       hd_voice_network_performance,
+                                       hd_voice_wifi_reliability,
+                                       hd_voice_wifi_performance,
+                                       hd_voice_reliability,
+                                       hd_voice_performance,
+                                       all_service,
+                                       preference_ratio,
+					data_wifi_performance,
+					data_wifi_reliability,
+					data_network_performance,
+					data_network_reliability;
+                                       
+--Rollup RTT Vmas kpis and scores to subscriber_id 
+gen_stp_rtt_vmas_subscriber_data = GROUP update_rtt_kpi_score_schema BY subscriber_id;
+
+rtt_vmas_kpi_scores_subscriber_agg =  FOREACH gen_stp_rtt_vmas_subscriber_data
+                                     {
+                                     sortbycomb = ORDER update_rtt_kpi_score_schema by mdn DESC;
+                                     latest = LIMIT sortbycomb 1;
+                                     GENERATE  MAX(update_rtt_kpi_score_schema.score_date)                                     AS score_date
+                                              ,group                                                                           AS subscriber_id
+                                              ,FLATTEN(latest.mdn)                                                             AS mdn
+                                              ,FLATTEN(latest.imsi)                                                            AS imsi
+                                              ,FLATTEN(latest.imei)                                                            AS imei
+                                              ,FLATTEN(latest.make)                                                            AS make
+                                              ,FLATTEN(latest.model)                                                           AS model
+                                              ,MAX(update_rtt_kpi_score_schema.trans_date)                                     AS trans_date
+                                              ,ToString(CurrentTime(),'yyyyMMdd HH:mm:ss')                                     AS load_time
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.attach_failure_pct),2)         AS attach_failure_pct
+                                              ,SUM(update_rtt_kpi_score_schema.attach_failure_cnt)                             AS attach_failure_cnt
+                                              ,SUM(update_rtt_kpi_score_schema.attach_attempts_cnt)                            AS attach_attempts_cnt
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.rrc_setup_failure_pct),2)      AS rrc_setup_failure_pct
+                                              ,SUM(update_rtt_kpi_score_schema.rrc_setup_failure_cnt)                          AS rrc_setup_failure_cnt
+                                              ,SUM(update_rtt_kpi_score_schema.rrc_setup_attempts_cnt)                         AS rrc_setup_attempts_cnt
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.srf_pct) ,2)                    AS srf_pct
+                                              ,SUM(update_rtt_kpi_score_schema.service_request_failures_cnt)                   AS service_request_failures_cnt
+                                              ,SUM(update_rtt_kpi_score_schema.service_request_attempts_cnt)                   AS service_request_attempts_cnt
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.pcf_pct),2)                    AS pcf_pct
+                                              ,SUM(update_rtt_kpi_score_schema.session_setup_failures_cnt)                     AS session_setup_failures_cnt
+                                              ,SUM(update_rtt_kpi_score_schema.session_setup_attempts_cnt)                     AS session_setup_attempts_cnt
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.cd_pct),2)                     AS cd_pct
+                                              ,SUM(update_rtt_kpi_score_schema.context_drops_cnt)                              AS context_drops_cnt
+                                              ,SUM(update_rtt_kpi_score_schema.context_events_cnt)                             AS context_events_cnt
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.sip_dropped_calls_pct),2)      AS sip_dropped_calls_pct
+                                              ,SUM(update_rtt_kpi_score_schema.volte_voice_calls_dropped_cnt)                  AS volte_voice_calls_dropped_cnt
+                                              ,SUM(update_rtt_kpi_score_schema.volte_voice_setup_incomplete_calls_cnt)         AS volte_voice_setup_incomplete_calls_cnt
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.rrc_radio_drop_pct),2)         AS rrc_radio_drop_pct
+                                              ,SUM(update_rtt_kpi_score_schema.radio_bearer_drops_cnt)                         AS radio_bearer_drops_cnt
+                                              ,SUM(update_rtt_kpi_score_schema.radio_bearer_setup_attempts_cnt)                AS radio_bearer_setup_attempts_cnt
+                                              ,AVG(update_rtt_kpi_score_schema.downlink_throughput_kbps)                       AS downlink_throughput_kbps
+                                              ,AVG(update_rtt_kpi_score_schema.uplink_throughput_kbps)                         AS uplink_throughput_kbps
+                                              ,SUM(update_rtt_kpi_score_schema.downlink_data_volume)                           AS downlink_data_volume
+                                              ,SUM(update_rtt_kpi_score_schema.downlink_active_time_ms)                        AS downlink_active_time_ms
+                                              ,SUM(update_rtt_kpi_score_schema.uplink_data_volume)                             AS uplink_data_volume
+                                              ,SUM(update_rtt_kpi_score_schema.uplink_active_time_ms)                          AS uplink_active_time_ms
+                                              ,MAX(update_rtt_kpi_score_schema.travelling_indicator)                           AS travelling_indicator
+                                              ,AVG(update_rtt_kpi_score_schema.volume_weighted_uplink_thpt_kbps)               AS volume_weighted_uplink_thpt_kbps
+                                              ,AVG(update_rtt_kpi_score_schema.volume_weighted_downlink_thpt_kbps)             AS volume_weighted_downlink_thpt_kbps
+                                              ,SUM(update_rtt_kpi_score_schema.callattempts_network)                           AS callattempts_network
+                                              ,SUM(update_rtt_kpi_score_schema.callattempts_wifi)                              AS callattempts_wifi
+                                              ,SUM(update_rtt_kpi_score_schema.calldropincludingho_network)                    AS calldropincludingho_network
+                                              ,SUM(update_rtt_kpi_score_schema.calldropincludingho_wifi)                       AS calldropincludingho_wifi
+                                              ,SUM(update_rtt_kpi_score_schema.seer_network)                                   AS seer_network
+                                              ,SUM(update_rtt_kpi_score_schema.seer_wifi)                                      AS seer_wifi
+                                              ,SUM(update_rtt_kpi_score_schema.callswithaleg_network)                          AS callswithaleg_network
+                                              ,SUM(update_rtt_kpi_score_schema.callswithaleg_wifi)                             AS callswithaleg_wifi
+                                              ,SUM(update_rtt_kpi_score_schema.attempts_network)                               AS attempts_network
+                                              ,SUM(update_rtt_kpi_score_schema.attempts_wifi)                                  AS attempts_wifi
+                                              ,SUM(update_rtt_kpi_score_schema.failures_network)                               AS failures_network
+                                              ,SUM(update_rtt_kpi_score_schema.failures_wifi)                                  AS failures_wifi
+                                              ,SUM(update_rtt_kpi_score_schema.secondsofuse_network)                           AS secondsofuse_network
+                                              ,SUM(update_rtt_kpi_score_schema.secondsofuse_wifi)                              AS secondsofuse_wifi
+                                              ,SUM(update_rtt_kpi_score_schema.totalgaplength_network_uplink)                  AS totalgaplength_network_uplink
+                                              ,SUM(update_rtt_kpi_score_schema.totalgaplength_network_downlink)                AS totalgaplength_network_downlink
+                                              ,SUM(update_rtt_kpi_score_schema.totalgaplength_wifi_uplink)                     AS totalgaplength_wifi_uplink
+                                              ,SUM(update_rtt_kpi_score_schema.totalgaplength_wifi_downlink)                   AS totalgaplength_wifi_downlink
+                                              ,SUM(update_rtt_kpi_score_schema.callduration_network_uplink)                    AS callduration_network_uplink
+                                              ,SUM(update_rtt_kpi_score_schema.callduration_network_downlink)                  AS callduration_network_downlink
+                                              ,SUM(update_rtt_kpi_score_schema.callduration_wifi_uplink)                       AS callduration_wifi_uplink
+                                              ,SUM(update_rtt_kpi_score_schema.callduration_wifi_downlink)                     AS callduration_wifi_downlink
+                                              ,SUM(update_rtt_kpi_score_schema.mos_network_downlink_num)                       AS mos_network_downlink_num
+                                              ,SUM(update_rtt_kpi_score_schema.mos_network_uplink_num)                         AS mos_network_uplink_num
+                                              ,SUM(update_rtt_kpi_score_schema.mos_wifi_downlink_num)                          AS mos_wifi_downlink_num
+                                              ,SUM(update_rtt_kpi_score_schema.mos_wifi_uplink_num)                            AS mos_wifi_uplink_num
+                                              ,SUM(update_rtt_kpi_score_schema.mos_network_downlink_den)                       AS mos_network_downlink_den
+                                              ,SUM(update_rtt_kpi_score_schema.mos_network_uplink_den)                         AS mos_network_uplink_den
+                                              ,SUM(update_rtt_kpi_score_schema.mos_wifi_downlink_den)                          AS mos_wifi_downlink_den
+                                              ,SUM(update_rtt_kpi_score_schema.mos_wifi_uplink_den)                            AS mos_wifi_uplink_den
+                                              ,AVG(update_rtt_kpi_score_schema.mos_network_downlink)                           AS mos_network_downlink
+                                              ,AVG(update_rtt_kpi_score_schema.mos_network_uplink)                             AS mos_network_uplink
+                                              ,AVG(update_rtt_kpi_score_schema.mos_wifi_downlink)                              AS mos_wifi_downlink
+                                              ,AVG(update_rtt_kpi_score_schema.mos_wifi_uplink)                                AS mos_wifi_uplink
+                                              ,AVG(update_rtt_kpi_score_schema.sipcalldroprateincludingho_network)             AS sipcalldroprateincludingho_network
+                                              ,AVG(update_rtt_kpi_score_schema.sipcalldroprateincludingho_wifi)                AS sipcalldroprateincludingho_wifi
+                                              ,AVG(update_rtt_kpi_score_schema.seer_kpi_network)                               AS seer_kpi_network
+                                              ,AVG(update_rtt_kpi_score_schema.seer_kpi_wifi)                                  AS seer_kpi_wifi
+                                              ,AVG(update_rtt_kpi_score_schema.rtpgapratio_network_uplink)                     AS rtpgapratio_network_uplink
+                                              ,AVG(update_rtt_kpi_score_schema.rtpgapratio_network_downlink)                   AS rtpgapratio_network_downlink
+                                              ,AVG(update_rtt_kpi_score_schema.rtpgapratio_wifi_uplink)                        AS rtpgapratio_wifi_uplink
+                                              ,AVG(update_rtt_kpi_score_schema.rtpgapratio_wifi_downlink)                      AS rtpgapratio_wifi_downlink
+                                              ,AVG(update_rtt_kpi_score_schema.attach_failure_pct_weight)                      AS attach_failure_pct_weight
+                                              ,AVG(update_rtt_kpi_score_schema.rrc_setup_failure_pct_weight)                   AS rrc_setup_failure_pct_weight
+                                              ,AVG(update_rtt_kpi_score_schema.srf_pct_weight)                                 AS srf_pct_weight
+                                              ,AVG(update_rtt_kpi_score_schema.pcf_pct_weight)                                 AS pcf_pct_weight
+                                              ,AVG(update_rtt_kpi_score_schema.cd_pct_weight)                                  AS cd_pct_weight
+                                              ,AVG(update_rtt_kpi_score_schema.rrc_radio_drop_pct_weight)                      AS rrc_radio_drop_pct_weight
+                                              ,AVG(update_rtt_kpi_score_schema.uplink_throughput_kbps_weight)                  AS uplink_throughput_kbps_weight
+                                              ,AVG(update_rtt_kpi_score_schema.downlink_throughput_kbps_weight)                AS downlink_throughput_kbps_weight
+                                              ,AVG(update_rtt_kpi_score_schema.sipcalldroprateincludingho_network_weight)      AS sipcalldroprateincludingho_network_weight
+                                              ,AVG(update_rtt_kpi_score_schema.seer_kpi_network_weight)                        AS seer_kpi_network_weight
+                                              ,AVG(update_rtt_kpi_score_schema.rtpgapratio_network_uplink_weight)              AS rtpgapratio_network_uplink_weight
+                                              ,AVG(update_rtt_kpi_score_schema.rtpgapratio_network_downlink_weight)            AS rtpgapratio_network_downlink_weight
+                                              ,AVG(update_rtt_kpi_score_schema.sipcalldroprateincludingho_wifi_weight)         AS sipcalldroprateincludingho_wifi_weight
+                                              ,AVG(update_rtt_kpi_score_schema.seer_kpi_wifi_weight)                           AS seer_kpi_wifi_weight
+                                              ,AVG(update_rtt_kpi_score_schema.rtpgapratio_wifi_uplink_weight)                 AS rtpgapratio_wifi_uplink_weight
+                                              ,AVG(update_rtt_kpi_score_schema.rtpgapratio_wifi_downlink_weight)               AS rtpgapratio_wifi_downlink_weight
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.data_reliability) * 100.0,2)            AS data_reliability
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.data_performance) * 100.0,2)            AS data_performance
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.hd_voice_network_reliability) * 100.0,2)                   AS hd_voice_network_reliability
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.hd_voice_network_performance) * 100.0,2)                   AS hd_voice_network_performance
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.hd_voice_wifi_reliability) * 100.0,2)   AS hd_voice_wifi_reliability
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.hd_voice_wifi_performance) * 100.0,2)   AS hd_voice_wifi_performance
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.hd_voice_reliability) * 100.0,2)        AS hd_voice_reliability
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.hd_voice_performance) * 100.0,2)        AS hd_voice_performance
+                                              ,ROUND_TO(AVG(update_rtt_kpi_score_schema.all_service) * 100.0,2)                 AS all_service
+                                              ,AVG(update_rtt_kpi_score_schema.preference_ratio)                               AS preference_ratio
+						,ROUND_TO(AVG(update_rtt_kpi_score_schema.data_wifi_performance) * 100.0,2)     AS data_wifi_performance
+						,ROUND_TO(AVG(update_rtt_kpi_score_schema.data_wifi_reliability) * 100.0,2)     AS data_wifi_reliability
+						,ROUND_TO(AVG(update_rtt_kpi_score_schema.data_network_performance) * 100.0,2)  AS data_network_performance
+						,ROUND_TO(AVG(update_rtt_kpi_score_schema.data_network_reliability) * 100.0,2)  AS data_network_reliability;
+                                             };
+
+--Store subscriber_id level agg  dataset to hdfspath
+STORE rtt_vmas_kpi_scores_subscriber_agg
+ INTO '$outputpath' 
+USING PigStorage('$agg_tbl_delim');
+
+--Store raw rtt vmas scores
+STORE update_rtt_kpi_score_schema
+ INTO '$raw_outputpath'
+USING PigStorage('$raw_tbl_delim');
