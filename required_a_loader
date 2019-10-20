@@ -1,0 +1,3 @@
+Create Loader for Hourly Score Data.
+
+This loader will take score data and correlate that with hourly same area/same device score. Correlated data into druid hourly scores data source.
