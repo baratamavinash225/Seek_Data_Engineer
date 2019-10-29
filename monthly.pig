@@ -99,7 +99,6 @@ daily_agg_enb_month_voice_grp = FOREACH (GROUP daily_agg_enb_month_voice BY (tra
                                                         sum_seconds_of_use AS usage;
                         };
 						
-daily_agg_enb_month_voice_max = FOREACH daily_agg_enb_month_voice_grp GENERATE MAX(usage);						
 
 --daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY (trans_mnth, mdn, usagetype))
 --                                                {
@@ -108,11 +107,15 @@ daily_agg_enb_month_voice_max = FOREACH daily_agg_enb_month_voice_grp GENERATE M
 --                                                         GENERATE FLATTEN(max_record);
 --                                                }
 --
+daily_agg_enb_month_voice_sum_group = GROUP daily_agg_enb_month_voice_grp BY trans_mnth, mdn, usagetype;
+daily_agg_enb_month_voice_max = FOREACH daily_agg_enb_month_voice_sum_group GENERATE group.trans_mnth AS trans_mnth, group.mdn as mdn, group.usagetype as usagetype, daily_agg_enb_month_voice_grp.enb as enb, MAX(daily_agg_enb_month_data_grp.usage);
+
+												
 DESCRIBE daily_agg_enb_month_voice_max;
 
-a = FILTER daily_agg_enb_month_voice_max BY (mdn =='2012056547');
+A  = FILTER daily_agg_enb_month_voice_max BY (mdn = "2012056547");
 
-dump a;
+DUMP A;
 
 daily_agg_enb_month_voice_max_records = FOREACH daily_agg_enb_month_voice_max GENERATE
 max_record::mdn as mdn:chararray,
@@ -133,15 +136,22 @@ daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (trans
 
 
 
-daily_agg_enb_month_data_max = FOREACH (GROUP daily_agg_enb_month_data_grp BY (trans_mnth, mdn, usagetype))
-                                                {
-                                                         ordered_data = ORDER daily_agg_enb_month_data_grp BY enb,usage DESC;
-                                                         max_record_data = LIMIT ordered_data 1;
-                                                         GENERATE FLATTEN(max_record_data);
-                                                }
+-- daily_agg_enb_month_data_max = FOREACH (GROUP daily_agg_enb_month_data_grp BY (trans_mnth, mdn, usagetype))
+--                                                 {
+--                                                          ordered_data = ORDER daily_agg_enb_month_data_grp BY enb,usage DESC;
+--                                                          max_record_data = LIMIT ordered_data 1;
+--                                                          GENERATE FLATTEN(max_record_data);
+--                                                 }
+-- 
+daily_agg_enb_month_data_sum_group = GROUP daily_agg_enb_month_data_grp BY trans_mnth, mdn, usagetype;
+daily_agg_enb_month_data_max = FOREACH daily_agg_enb_month_data_sum_group GENERATE group.trans_mnth AS trans_mnth, group.mdn as mdn, group.usagetype as usagetype, daily_agg_enb_month_data_grp.enb as enb, MAX(daily_agg_enb_month_data_grp.usage);
 
-
+												
 DESCRIBE daily_agg_enb_month_data_max;
+
+A  = FILTER daily_agg_enb_month_data_max BY (mdn = "2012056547");
+
+DUMP A;
 
 daily_agg_enb_month_data_max_records = FOREACH daily_agg_enb_month_data_max GENERATE
 max_record_data::mdn as mdn:chararray,
