@@ -100,22 +100,31 @@ daily_agg_enb_month_voice_grp = FOREACH (GROUP daily_agg_enb_month_voice BY (tra
                         };
 						
 
-daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY (trans_mnth, mdn, enb, usagetype))
-                                                 {
-                                                          ordered_data = ORDER daily_agg_enb_month_voice_grp BY mdn, enb, usage DESC;
-                                                          max_record = LIMIT ordered_data 1;
-                                                          GENERATE FLATTEN(max_record);
-                                                 }
+-- daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY (trans_mnth, mdn, enb, usagetype))
+--                                                  {
+--                                                           ordered_data = ORDER daily_agg_enb_month_voice_grp BY mdn, enb, usage DESC;
+--                                                           max_record = LIMIT ordered_data 1;
+--                                                           GENERATE FLATTEN(max_record);
+--                                                  }
 
+daily_agg_enb_month_voice_sum_grp= GROUP daily_agg_enb_month_voice_grp
+                         BY (trans_mnth, mdn, usagetype);
+
+daily_agg_enb_month_voice_max = FOREACH daily_agg_enb_month_voice_sum_grp
+                            GENERATE group.mdn AS mdn
+                                    ,group.usagetype AS usagetype
+									,group.trans_mnth AS trans_mnth
+                                    ,daily_agg_enb_month_voice_grp.enb AS enb
+                                    ,MAX(daily_agg_enb_month_voice_grp.usage) AS usage;
 
 
 												
 
 daily_agg_enb_month_voice_max_records = FOREACH daily_agg_enb_month_voice_max GENERATE
-max_record::mdn as mdn:chararray,
-max_record::usagetype as usagetype:chararray,
-FLATTEN(max_record::enb) as enb:chararray,
-max_record::trans_mnth as trans_mnth:chararray;
+mdn as mdn:chararray,
+usagetype as usagetype:chararray,
+enb as enb:chararray,
+trans_mnth as trans_mnth:chararray;
 
 daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (trans_mnth, mdn, enb, usagetype))
                         {
@@ -130,18 +139,35 @@ daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (trans
 
 
 
- daily_agg_enb_month_data_max = FOREACH (GROUP daily_agg_enb_month_data_grp BY (trans_mnth, mdn,enb, usagetype))
-                                                 {
-                                                          ordered_data = ORDER daily_agg_enb_month_data_grp BY mdn, enb,usage DESC;
-                                                          max_record_data = LIMIT ordered_data 1;
-                                                          GENERATE FLATTEN(max_record_data);
-                                                 }
- 
+-- daily_agg_enb_month_data_max = FOREACH (GROUP daily_agg_enb_month_data_grp BY (trans_mnth, mdn,enb, usagetype))
+--                                                 {
+--                                                          ordered_data = ORDER daily_agg_enb_month_data_grp BY mdn, enb,usage DESC;
+--                                                          max_record_data = LIMIT ordered_data 1;
+--                                                          GENERATE FLATTEN(max_record_data);
+--                                                 }
+--
+
+												 
+
+												 
+daily_agg_enb_month_data_sum_grp= GROUP daily_agg_enb_month_data_grp
+                         BY (trans_mnth, mdn, usagetype);
+
+daily_agg_enb_month_data_max = FOREACH daily_agg_enb_month_data_sum_grp
+                            GENERATE group.mdn AS mdn
+                                    ,group.usagetype AS usagetype
+									,group.trans_mnth AS trans_mnth
+                                    ,daily_agg_enb_month_data_grp.enb AS enb
+                                    ,MAX(daily_agg_enb_month_data_grp.usage) AS usage;
+
+
+												
+
 daily_agg_enb_month_data_max_records = FOREACH daily_agg_enb_month_data_max GENERATE
-max_record_data::mdn as mdn:chararray,
-max_record_data::usagetype as usagetype:chararray,
-FLATTEN(max_record_data::enb) as enb:chararray,
-max_record_data::trans_mnth as trans_mnth:chararray;
+mdn as mdn:chararray,
+usagetype as usagetype:chararray,
+enb as enb:chararray,
+trans_mnth as trans_mnth:chararray;
 
 -- ---------------------------------------------------------------------------------------------------------------
 
