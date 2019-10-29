@@ -103,8 +103,8 @@ daily_agg_enb_month_voice_grp = FOREACH (GROUP daily_agg_enb_month_voice BY (tra
 daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY (trans_mnth, mdn, enb, usagetype))
                                                  {
                                                           ordered_data = ORDER daily_agg_enb_month_voice_grp BY mdn, enb, usage DESC;
-                                                          max_record_data = LIMIT ordered_data 1;
-                                                          GENERATE FLATTEN(max_record_data);
+                                                          max_record = LIMIT ordered_data 1;
+                                                          GENERATE FLATTEN(max_record);
                                                  }
 
 
