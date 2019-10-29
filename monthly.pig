@@ -100,9 +100,6 @@ daily_agg_enb_month_voice_grp = FOREACH (GROUP daily_agg_enb_month_voice BY (tra
                         };
 						
 
---daily_agg_enb_month_voice_sum_group = GROUP daily_agg_enb_month_voice_grp BY (trans_mnth, mdn, usagetype);
---daily_agg_enb_month_voice_max = FOREACH daily_agg_enb_month_voice_sum_group GENERATE group.trans_mnth AS trans_mnth, group.mdn as mdn, group.usagetype as usagetype, daily_agg_enb_month_voice_grp.enb as enb, MAX(daily_agg_enb_month_data_grp.usage);
-
 daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY (trans_mnth, mdn, enb, usagetype))
                                                  {
                                                           ordered_data = ORDER daily_agg_enb_month_voice_grp BY mdn, enb, usage DESC;
@@ -113,11 +110,6 @@ daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY 
 
 
 												
-DESCRIBE daily_agg_enb_month_voice_max;
-
-A  = FILTER daily_agg_enb_month_voice_max BY (max_record::mdn = "2012056547");
-
-DUMP A;
 
 daily_agg_enb_month_voice_max_records = FOREACH daily_agg_enb_month_voice_max GENERATE
 max_record::mdn as mdn:chararray,
@@ -145,16 +137,6 @@ daily_agg_enb_month_data_grp = FOREACH (GROUP daily_agg_enb_month_data BY (trans
                                                           GENERATE FLATTEN(max_record_data);
                                                  }
  
---daily_agg_enb_month_data_sum_group = GROUP daily_agg_enb_month_data_grp BY trans_mnth, mdn, usagetype;
---daily_agg_enb_month_data_max = FOREACH daily_agg_enb_month_data_sum_group GENERATE group.trans_mnth AS trans_mnth, group.mdn as mdn, group.usagetype as usagetype, daily_agg_enb_month_data_grp.enb as enb, MAX(daily_agg_enb_month_data_grp.usage);
-
-												
-DESCRIBE daily_agg_enb_month_data_max;
-
-A  = FILTER daily_agg_enb_month_data_max BY (mdn = "2012056547");
-
-DUMP A;
-
 daily_agg_enb_month_data_max_records = FOREACH daily_agg_enb_month_data_max GENERATE
 max_record_data::mdn as mdn:chararray,
 max_record_data::usagetype as usagetype:chararray,
