@@ -115,7 +115,7 @@ daily_agg_enb_month_voice_max = FOREACH (GROUP daily_agg_enb_month_voice_grp BY 
 												
 DESCRIBE daily_agg_enb_month_voice_max;
 
-A  = FILTER daily_agg_enb_month_voice_max BY (mdn = "2012056547");
+A  = FILTER daily_agg_enb_month_voice_max BY (max_record::mdn = "2012056547");
 
 DUMP A;
 
