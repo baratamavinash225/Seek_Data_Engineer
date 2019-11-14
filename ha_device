@@ -1,0 +1,763 @@
+#!/usr/bin/ksh
+################################################################################
+################################################################################
+##### Author: Krishna Harish Katuru (Harry)
+#####    This script is using to load the STP data
+#####    into Data stage tables.
+################################################################################
+################################################################################
+if [[ -z $STPBASE ]]
+then
+  echo "STPBASE not set, cannot proceed further."
+  exit 1
+fi
+
+. $STPBASE/config/load_stp_config.cfg
+
+### Global Variables for this script
+PROCESS="stp_load_customer_profile"
+LOGFILE=$LOAD_STP_CUSTOMER_PROFILE_LOG_FILE
+PIDFILE=$LOAD_STP_CUSTOMER_PROFILE_PID_FILE
+LOGDIR=$LOAD_STP_CUSTOMER_PROFILE_LOG_DIR
+CHECKPOINTDIR=$LOAD_STP_CUSTOMER_PROFILE_CHECKPOINT_DIR
+PIGSCRIPT=$LOAD_STP_CUSTOMER_PROFILE_PIG
+SCDSCRIPT=$LOAD_STP_SLOW_CHANGING_DIMENSION
+MINTRANPIGSCRIPT=$LOAD_STP_MIN_TRANSLATION_PIG
+FILEPATTERN=$LOAD_STP_CUSTOMER_PROFILE_FILE_PATTERN
+SRCDIR=$LOAD_STP_CUSTOMER_PROFILE_HDFS_SOURCE_DIR
+ARCDIR=$LOAD_STP_CUSTOMER_PROFILE_HDFS_ARCHIVE_DIR
+WORKDIR=$LOAD_STP_CUSTOMER_PROFILE_HDFS_WORK_DIR
+SRCDELIM=$LOAD_STP_CUSTOMER_PROFILE_DELIM
+CUSTPROFILETBL=$LOAD_STP_CUSTOMER_PROFILE_HIVE_TABLE
+SCDTBL=$LOAD_SLOW_CHANGING_DIMENSION_HIVE_TABLE
+SCDTMPTBL=$LOAD_SLOW_CHANGING_DIMENSION_TEMP_TABLE
+MINTRANTBL=$LOAD_MIN_TRANSLATION_HIVE_TABLE
+EVENTTBL=$LOAD_STP_EVENT_LOAD_STATUS_HIVE_TABLE
+EVENT_SCRIPT=$LOAD_EVENT_HISTORY_DEVICE_CHANGE_SCRIPT
+TARGET_SCHEMA=$LOAD_STP_CUSTOMER_PROFILE_TARGET_HIVEDB
+DRUID_TOGGLE=$STP_MIN_TRANS_DRUID_TOGGLE
+DRUID_INGESTION=$STP_MIN_TRANS_DRUID_INGESTION_SCRIPT
+PIGMODE=$LOAD_STP_CUSTOMER_PROFILE_PIG_MODE
+
+################################################################################
+################################################################################
+##### Function: InstanceCheck
+InstanceCheck()
+{
+  ## See if the PID file exists and if it doesn't, we're good.
+  if [[ -a $PIDFILE ]]
+  then
+    ## Now get the pid from the PID file and see if the PID is active, and
+    ## relevant to this process.
+    pid=$(cat $PIDFILE 2>>$LOGFILE)
+    ps -o args= -p $pid | grep $PROCESS > /dev/null 2>&1
+    if [[ $? == 0 ]]
+    then
+      if [[ -t 0 ]]
+      then
+        echo "*** $(basename $0) is already running ***"
+        ps -fp $pid
+      else
+        scriptlogger $LOGFILE $PROCESS $$  "[ERROR] *** $(basename $0) Already running:\n $(ps -fp $pid)"
+      fi
+      ## Duplicate instance, so we have to exit.
+      scriptlogger $LOGFILE $PROCESS $$  "Process already running. Exiting..."
+      exit 1
+    fi
+  fi
+}
+
+################################################################################
+################################################################################
+##### Function: MkHDFSDir
+MkHDFSDir()
+{
+  dir=$1
+  mkdir_log=$LOGDIR/.mkdir_.log
+
+  hdfs dfs -test -d $dir >>/dev/null 2>&1
+
+  if [[ $? -ne 0 ]]
+  then
+    hdfs dfs -mkdir -p $dir >> $mkdir_log 2>&1
+
+    if [[ $? -ne 0 ]]
+    then
+      scriptlogger $LOGFILE $PROCESS $$ "[ERROR] Failed to create $dir"
+      cat $mkdir_log >> $LOGFILE
+      rm -f $mkdir_log
+      exit 1
+    else
+      scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Created $dir"
+    fi
+
+    rm -f $mkdir_log
+  fi
+}
+
+################################################################################
+################################################################################
+##### Function: PrepareEnv
+PrepareEnv()
+{
+  ## Make the necessary directories.
+  mkdir -p $LOGDIR
+  mkdir -p $CHECKPOINTDIR
+
+  MkHDFSDir $WORKDIR >>/dev/null 2>&1
+}
+
+################################################################################
+################################################################################
+##### Function: DropSCDLatestPartition
+DropSCDLatestPartition()
+{
+  latest_partition=$(hdfs dfs -ls /apps/hive/warehouse/$TARGET_SCHEMA.db/$SCDTBL |cut -d'=' -f2 | sort -n | awk 'END{print $NF}') >>$LOGFILE 2>&1
+
+  /usr/bin/hive -e "alter table $TARGET_SCHEMA.$SCDTBL drop if exists partition (partitiondate=='$latest_partition')" >>$LOGFILE 2>&1
+
+  if [[ $? -ne 0 ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[ERROR] Failed to drop recently created partitions on $TARGET_SCHEMA.$SCDTBL. Plese check the hive log below."
+    newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_failed_to_drop_scd_current_partition.flag
+    mv $chkpntfile $newchkpntfile
+    chkpntfile=$newchkpntfile
+    return 1
+  fi
+
+  return 0
+}
+
+################################################################################
+################################################################################
+##### Function: DropSCDSpecificPartition
+DropSCDSpecificPartition()
+{
+  partitionToDrop=$1
+
+  /usr/bin/hive -e "alter table $TARGET_SCHEMA.$SCDTBL drop if exists partition (partitiondate=='$partitionToDrop')" >>$LOGFILE 2>&1
+
+  if [[ $? -ne 0 ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[ERROR] Failed to drop $partitionToDrop on $TARGET_SCHEMA.$SCDTBL. Plese check the hive log below."
+    return 1
+  fi
+
+  return 0
+}
+
+################################################################################
+################################################################################
+##### Function: DropCustomerProfileSpecificPartition
+DropCustomerProfileSpecificPartition()
+{
+  partitionName=$1
+  scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Dropping customer profile table partition $partitionName"
+
+  /usr/bin/hive -e "alter table $TARGET_SCHEMA.$CUSTPROFILETBL drop if exists partition (partitiondate=='$partitionName')" >>$LOGFILE 2>&1
+
+  if [[ $? -ne 0 ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[ERROR] Failed to drop partition $partitionName on $TARGET_SCHEMA.$CUSTPROFILETBL. Plese check the hive log below."
+    return 1
+  fi
+  
+  return 0
+}
+
+################################################################################
+################################################################################
+##### Function: DropCustomerProfileCurrentPartition
+DropCustomerProfileCurrentPartition()
+{
+  scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Dropping customer profile table partition $customer_profile_partition_datetime"
+
+  /usr/bin/hive -e "alter table $TARGET_SCHEMA.$CUSTPROFILETBL drop if exists partition (partitiondate=='$customer_profile_partition_datetime')" >>$LOGFILE 2>&1
+
+  if [[ $? -ne 0 ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[ERROR] Failed to drop recently created partitions on $TARGET_SCHEMA.$CUSTPROFILETBL. Plese check the hive log below."
+    if [[ $scd_loaded -eq 1 ]]
+    then
+      newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_failed_to_drop_current_cust_prof_partition_scd_loaded.flag
+    else
+      newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_failed_to_drop_current_cust_prof_partition_scd_not_loaded.flag
+    fi
+
+    mv $chkpntfile $newchkpntfile
+    chkpntfile=$newchkpntfile
+
+    return 1
+  fi
+  
+  return 0
+}
+
+################################################################################
+################################################################################
+##### Function: DropCustomerProfileOlderpartitions
+DropCustomerProfileOlderpartitions()
+{
+  scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Dropping older partitions for $TARGET_SCHEMA.$CUSTPROFILETBL"
+
+  /usr/bin/hive -e "alter table $TARGET_SCHEMA.$CUSTPROFILETBL drop if exists partition (partitiondate!='$customer_profile_partition_datetime')" >>$LOGFILE 2>&1
+
+  if [[ $? -ne 0 ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[ERROR] Failed to drop older partitions on $TARGET_SCHEMA.$CUSTPROFILETBL. Plese check the hive log below"
+    newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_failed_to_drop_old_cust_prof_partition.flag
+    mv $chkpntfile $newchkpntfile
+    chkpntfile=$newchkpntfile
+	exit 1
+  fi
+}
+
+################################################################################
+################################################################################
+##### Function: WritePIDFile
+WritePIDFile()
+{
+  ## Write the PID to PID file.
+  echo $$ > $PIDFILE
+}
+
+################################################################################
+################################################################################
+##### Function: DruidIngest
+DruidIngest()
+{
+  scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Invoking Druid STP Min Translation ingestion job"
+  $DRUID_INGESTION >> $LOGFILE
+  if [[ $? -eq 0 ]]
+  then
+    newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_finished_druid_ingest.flag
+    mv $chkpntfile $newchkpntfile
+    chkpntfile=$newchkpntfile
+  else
+    newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_failed_druid_ingest.flag
+    mv $chkpntfile $newchkpntfile
+    chkpntfile=$newchkpntfile
+    exit 1
+  fi
+}
+
+################################################################################
+################################################################################
+##### Function: BuildCustomerProfile
+BuildCustomerProfile()
+{
+  file=$1
+  newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_processing_started.flag
+  mv $chkpntfile $newchkpntfile
+  chkpntfile=$newchkpntfile
+  
+  echo $file | grep -i "delta" >>/dev/null 2>&1
+
+  delta=$?
+
+  if [[ $delta -eq 0 ]]
+  then
+    filedate=$(echo $file | cut -d . -f 1 | cut -d '-' -f 5,6)
+  else
+    filedate=$(echo $file | cut -d . -f 1 | cut -d '-' -f 4,5)
+  fi
+
+  customer_profile_partition_datetime=`date +%Y%m%d%H%M`
+  
+  /usr/bin/pig -Dpig.additional.jars=$PIGGYBANK_JAR -Dexectype=$PIGMODE -useHCatalog -f $PIGSCRIPT -l $LOGDIR \
+               -param sourcefilename=$WORKDIR/$file \
+               -param filename="\'$file\'" \
+               -param filedate="\'$filedate\'" \
+               -param destschema=$TARGET_SCHEMA \
+               -param custprofiletbl=$CUSTPROFILETBL \
+               -param delim=$SRCDELIM \
+               -param partitiondate=$customer_profile_partition_datetime >>$LOGFILE 2>&1
+
+  if [[ $? -ne 0 ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[ERROR] Failed to load customer profile data into the hive table, see the below log for more details."
+    newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_failed_on_customer_profile_pig.flag
+    mv $chkpntfile $newchkpntfile
+    chkpntfile=$newchkpntfile
+  else
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Finished loading $TARGET_SCHEMA.$CUSTPROFILETBL"
+    customer_profile_loaded=1
+    newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_finished_customer_profile_pig.flag
+    mv $chkpntfile $newchkpntfile
+    chkpntfile=$newchkpntfile
+  fi
+}
+
+################################################################################
+################################################################################
+##### Function: BuildSlowChangingDimension
+BuildSlowChangingDimension()
+{
+  latest_partition=""
+
+  # Check if the table already exists and get the latest partition.
+  hdfs dfs -ls -u /apps/hive/warehouse/$TARGET_SCHEMA.db/$SCDTBL >>/dev/null 2>&1
+
+  if [[ $? -eq 0 ]]
+  then
+    latest_partition=$(hdfs dfs -ls /apps/hive/warehouse/$TARGET_SCHEMA.db/$SCDTBL |cut -d'=' -f2 | sort -n | awk 'END{print $NF}') >>$LOGFILE 2>&1
+  fi
+
+  newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_started_slow_changing_dimension.flag
+  mv $chkpntfile $newchkpntfile
+  chkpntfile=$newchkpntfile
+
+  /usr/bin/hive -f $SCDSCRIPT -hiveconf DATABASE_NAME=$TARGET_SCHEMA \
+                              -hiveconf scd_temp=$SCDTMPTBL \
+                              -hiveconf scd=$SCDTBL \
+                              -hiveconf cust_profile=$CUSTPROFILETBL \
+                              -hiveconf scd_max_partition=$latest_partition >>$LOGFILE 2>&1
+
+  # If failed, set the flag to false.
+  # else proceed further.
+  if [[ $? -ne 0 ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[ERROR] Failed to load $TARGET_SCHEMA.$SCDTBL"
+    newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_failed_slow_changing_dimension.flag
+    mv $chkpntfile $newchkpntfile
+    chkpntfile=$newchkpntfile
+  else
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Finished loading $TARGET_SCHEMA.$SCDTBL"
+    scd_loaded=1
+    newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_finished_slow_changing_dimension.flag
+    mv $chkpntfile $newchkpntfile
+    chkpntfile=$newchkpntfile
+  fi
+}
+
+################################################################################
+################################################################################
+##### Function: BuildMinTranslation
+BuildMinTranslation()
+{
+  newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_started_min_translation.flag
+  mv $chkpntfile $newchkpntfile
+  chkpntfile=$newchkpntfile
+
+  /usr/bin/pig -Dexectype=$PIGMODE -useHCatalog -f $MINTRANPIGSCRIPT -l $LOGDIR \
+               -param destschema=$TARGET_SCHEMA \
+               -param custprofiletbl=$CUSTPROFILETBL \
+               -param mintrantbl=$MINTRANTBL >>$LOGFILE 2>&1
+
+  # If failed, set the flag to false
+  if [[ $? -ne 0 ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[ERROR] Failed to load $TARGET_SCHEMA.$MINTRANTBL"
+    newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_failed_min_translation.flag
+    mv $chkpntfile $newchkpntfile
+    chkpntfile=$newchkpntfile
+  else
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Finished loading $TARGET_SCHEMA.$MINTRANTBL"
+    newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_finished_min_translation.flag
+    mv $chkpntfile $newchkpntfile
+    chkpntfile=$newchkpntfile
+    min_translation_loaded=1
+  fi
+}
+
+################################################################################
+################################################################################
+##### Function: DeviceEventHistory
+DeviceEventHistory()
+{
+  current_time=`date +"%Y-%m-%d %H:%M:%S.%3N"`
+
+  scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Getting previous run time information."
+
+  # Get last runtime for IVR outage event
+  prev_runtime=$(/usr/bin/hive -e "SELECT DATE_FORMAT(MAX(LAST_EXECUTION_TIME),'yyyy-MM-dd_HH:mm:ss.SSS') FROM $TARGET_SCHEMA.$EVENTTBL WHERE JOB_NAME='STP_CUSTOMER_EVENT_HISTORY_DEVICE_CHANGE'") >>/dev/null 2>&1
+
+  if [[ -z "$prev_runtime" ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[ERROR] Error while getting the last execution time for Device Change Events."
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Check Hive table $TARGET_SCHEMA.$EVENTTBL"
+    exit 1
+  else
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Spinning the event history now."
+
+    latest_partition=$(hdfs dfs -ls /apps/hive/warehouse/$TARGET_SCHEMA.db/$SCDTBL |cut -d'=' -f2 | sort -n | awk 'END{print $NF}') >>$LOGFILE 2>&1
+
+    /usr/bin/hive -f $EVENT_SCRIPT -hiveconf DATABASE_NAME=$TARGET_SCHEMA \
+                                   -hiveconf LASTRUNTIME=$prev_runtime \
+                                   -hiveconf SCD_MAX_PARTITION=$latest_partition \
+                                   -hiveconf MAXDATE=$current_time >>$LOGFILE 2>&1
+    if [[ $? -ne 0 ]]
+    then
+      scriptlogger $LOGFILE $PROCESS $$ "[ERROR] ERROR while loading Events for Device Change."
+      newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_failed_device_event_history.flag
+      mv $chkpntfile $newchkpntfile
+      chkpntfile=$newchkpntfile
+	  exit 1
+    else
+      scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Finished loading Events table for Device Change."
+      newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_finished_device_event_history.flag
+      mv $chkpntfile $newchkpntfile
+      chkpntfile=$newchkpntfile
+    fi
+  fi
+}
+
+################################################################################
+################################################################################
+##### Function: RollFrontCustomerProfile
+RollFrontCustomerProfile()
+{
+  #partitionList=$(hive -e "select distinct partitiondate from $TARGET_SCHEMA.$CUSTPROFILETBL") >> $LOGFILE
+  partitionList=$(hdfs dfs -ls /apps/hive/warehouse/$TARGET_SCHEMA.db/$CUSTPROFILETBL | grep partitiondate | cut -d'=' -f2 | sort) >> $LOGFILE 2>&1
+  
+  firstPartition=`echo $partitionList | cut -d ' ' -f 1`
+  secondPartition=`echo $partitionList | cut -d ' ' -f 2`
+  
+  if [[ $secondPartition != "" && $firstPartition != $secondPartition ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO] Found two partitions ($firstPartition and $secondPartition) on $TARGET_SCHEMA.$CUSTPROFILETBL, rolling front."
+  
+    partitionToDrop=$firstPartition
+    if [[ $firstPartition > $secondPartition ]]
+    then
+      partitionToDrop=$secondPartition
+    fi
+    
+    DropCustomerProfileSpecificPartition $partitionToDrop
+    if [[ $? -ne 0 ]]
+    then
+      exit 1
+    fi
+  else
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO] Nothing to do since we have one partition only."
+  fi
+}
+
+################################################################################
+################################################################################
+##### Function: RollBackCustomerProfile
+RollBackCustomerProfile()
+{
+  #partitionList=$(hive -e "select distinct partitiondate from $TARGET_SCHEMA.$CUSTPROFILETBL") >> $LOGFILE
+  partitionList=$(hdfs dfs -ls /apps/hive/warehouse/$TARGET_SCHEMA.db/$CUSTPROFILETBL | grep partitiondate | cut -d'=' -f2 | sort) >> $LOGFILE 2>&1
+  
+  firstPartition=`echo $partitionList | cut -d ' ' -f 1`
+  secondPartition=`echo $partitionList | cut -d ' ' -f 2`
+  
+  if [[ $secondPartition != "" && $secondPartition != $firstPartition ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO] Found two partitions ($firstPartition and $secondPartition) on $TARGET_SCHEMA.$CUSTPROFILETBL, rolling back."
+  
+    partitionToDrop=$secondPartition
+    if [[ $firstPartition > $secondPartition ]]
+    then
+      partitionToDrop=$firstPartition
+    fi
+    
+    DropCustomerProfileSpecificPartition $partitionToDrop
+    if [[ $? -ne 0 ]]
+    then
+      exit 1
+    fi
+  else
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO] Nothing to rollback since we have one partition only."
+  fi
+}
+
+################################################################################
+################################################################################
+##### Function: RollBackCustomerProfile
+RollBackSlowChangingDimension()
+{
+  #partitionList=$(hive -e "select distinct partitiondate from $TARGET_SCHEMA.$CUSTPROFILETBL") >> $LOGFILE
+  scriptlogger $LOGFILE $PROCESS $$ "[INFO] Rolling back the latest partition on $TARGET_SCHEMA.$SCDTBL."
+  partitionToDrop=$(hdfs dfs -ls /apps/hive/warehouse/$TARGET_SCHEMA.db/$SCDTBL |cut -d'=' -f2 | sort -n | awk 'END{print $NF}') >> $LOGFILE 2>&1  
+  DropSCDSpecificPartition $partitionToDrop
+  if [[ $? -ne 0 ]]
+  then
+    exit 1
+  fi
+}
+
+################################################################################
+################################################################################
+##### Function: CheckPointVerification
+CheckPointVerification()
+{
+  scriptlogger $LOGFILE $PROCESS $$ "[INFO] Performing the checkpoint verification for inspecting previous failures"
+  
+  ls -u $CHECKPOINTDIR/checkpoint_customer_profile* 2>&1 >>/dev/null
+  
+  if [[ $? -ne 0 ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO] No checkpoint files found, normal operation would resume."
+	return
+  fi
+  
+  tmpcurChkpntFile=`ls $CHECKPOINTDIR/checkpoint_customer_profile_*` 2>&1
+  
+  curChkpntFile=$(basename $tmpcurChkpntFile)
+  chkpntfile=$curChkpntFile
+  
+  if [[   $curChkpntFile == "checkpoint_customer_profile_checking_files.flag"
+       || $curChkpntFile == "checkpoint_customer_profile_failed_on_file_move.flag" ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO] The previous process got killed before any processing began; nothing to perform."
+  elif [[   $curChkpntFile == "checkpoint_customer_profile_finished.flag"
+         || $curChkpntFile == "checkpoint_customer_profile_finished_druid_ingest.flag" ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO] We had a successful previous run; no remediation required."
+  elif [[   $curChkpntFile == "checkpoint_customer_profile_processing_started.flag"
+         || $curChkpntFile == "checkpoint_customer_profile_failed_on_customer_profile_pig.flag"
+         || $curChkpntFile == "checkpoint_customer_profile_finished_customer_profile_pig.flag"
+         || $curChkpntFile == "checkpoint_customer_profile_started_slow_changing_dimension.flag"
+         || $curChkpntFile == "checkpoint_customer_profile_failed_slow_changing_dimension.flag" ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO] Discovered a failure during customer profile and/or slow changing dimension run."
+    RollBackCustomerProfile
+  elif [[   $curChkpntFile == "checkpoint_customer_profile_finished_slow_changing_dimension.flag"
+         || $curChkpntFile == "checkpoint_customer_profile_started_min_translation.flag"
+         || $curChkpntFile == "checkpoint_customer_profile_failed_min_translation.flag" 
+         || $curChkpntFile == "checkpoint_customer_profile_failed_to_archive.flag" ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO] Discovered a failure after slow changing dimension run and/or before archive."
+    RollBackCustomerProfile
+    RollBackSlowChangingDimension
+  elif [[ $curChkpntFile == "checkpoint_customer_profile_failed_to_drop_current_cust_prof_partition_scd_loaded.flag" ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO] Discovered a failure on dropping current customer profile partition on successful slow changing dimension run."
+    RollBackCustomerProfile
+    RollBackSlowChangingDimension
+  elif [[ $curChkpntFile == "checkpoint_customer_profile_failed_to_drop_current_cust_prof_partition_scd_not_loaded.flag" ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO] Discovered a failure on dropping current customer profile partition on failed slow changing dimension run."
+    RollBackCustomerProfile
+  elif [[ $curChkpntFile == "checkpoint_customer_profile_failed_to_drop_scd_current_partition.flag" ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO] Discovered a failure on dropping current slow changing dimension partition."
+    RollBackSlowChangingDimension
+  elif [[   $curChkpntFile == "checkpoint_customer_profile_ready_for_event_history.flag"
+         || $curChkpntFile == "checkpoint_customer_profile_failed_device_event_history.flag" ]]
+  then
+	scriptlogger $LOGFILE $PROCESS $$ "[INFO] Discovered a failure during device event history, will rerun and try the druid ingest if the toggle is 1"
+    DeviceEventHistory
+	if [[ $DRUID_TOGGLE -eq 1 ]]
+	then
+      DruidIngest
+    fi
+  elif [[ $curChkpntFile == "checkpoint_customer_profile_failed_and_rolled_back.flag" ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO] We had a failure and everything was rolled back properly; nothing to perform"
+  elif [[ $curChkpntFile == "checkpoint_customer_profile_failed_to_drop_old_cust_prof_partition.flag" ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO] Discovered a failure on dropping old current customer profile partition."
+    RollFrontCustomerProfile
+  elif [[   $curChkpntFile == "checkpoint_customer_profile_finished_device_event_history.flag"
+         || $curChkpntFile == "checkpoint_customer_profile_failed_druid_ingest.flag" ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO] Discovered a failure just before/during the druid ingest, will rerun druid ingest."
+    if [[ $DRUID_TOGGLE -eq 1 ]]
+	then
+      DruidIngest
+    fi
+  fi
+  
+  rm $CHECKPOINTDIR/checkpoint_customer_profile* >>/dev/null 2>&1
+}
+
+################################################################################
+################################################################################
+##### Function: CoreLogic
+CoreLogic()
+{
+  scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Beginning the processing for Customer Profile and Relations."
+
+  # Set all flags to zero, they'd become ones as we move further.
+  customer_profile_loaded=0
+  scd_loaded=0
+  min_translation_loaded=0
+  failed_on_input_file_move=0
+  ready_for_device_event_history=0
+
+  ## First check the checkpoints and see if you have to rollback stuff before fresh processing
+  CheckPointVerification
+  
+  chkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_checking_files.flag
+  touch $chkpntfile
+
+  # Check if we have files in the input dir
+  # If we do, move them to work dir
+  hdfs dfs -ls -u $SRCDIR/$FILEPATTERN* >/dev/null 2>&1
+  if [[ $? -ne 0 ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO ] No files of pattern $FILEPATTERN found in the input $SRCDIR"
+  else
+    mv_log=$LOGDIR/.filemove.log
+    hdfs dfs -mv $SRCDIR/$FILEPATTERN* $WORKDIR >>$mv_log 2>&1
+
+    if [[ $? -ne 0 ]]
+    then
+      scriptlogger $LOGFILE $PROCESS $$ "[ERROR] Failed to move files from $SRCDIR to $WORKDIR"
+      cat $mv_log >> $LOGFILE
+      failed_on_input_file_move=1
+    fi
+
+    rm -f $mv_log
+  fi
+
+  # Do not proceed to processing if the file move failed.
+  if [[ $failed_on_input_file_move -eq 1 ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO ] The files have failed to move and this needs investigating. Will not proceed to the processing."
+    rm -f $PIDFILE
+    newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_failed_on_file_move.flag
+    mv $chkpntfile $newchkpntfile
+    return 1
+  fi
+
+  # Check if you have any files in work to call the pig script.
+  hdfs dfs -ls -u $WORKDIR/$FILEPATTERN* >/dev/null 2>&1
+  if [[ $? -ne 0 ]]
+  then
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO ] No files found of previous run or this run in $WORKDIR. Will not proceed to the processing."
+    newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_finished.flag
+    mv $chkpntfile $newchkpntfile
+    chkpntfile=$newchkpntfile
+  else
+    # Let the games begin!!
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Found files."
+
+    filelist=$(hdfs dfs -stat "%n" $WORKDIR/* 2>/dev/null)
+
+    scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Starting the customer profile $PIGSCRIPT"
+
+    for file in $filelist
+    do
+      scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Processing $file"
+
+      newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_processing_started.flag
+      mv $chkpntfile $newchkpntfile
+      chkpntfile=$newchkpntfile
+
+      BuildCustomerProfile $file
+
+      # If the customer profile relation succeeded, only then invoke the hql for SCD.
+      if [[ $customer_profile_loaded -eq 1 ]]
+      then
+        scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Starting the slow changing dimension $SCDSCRIPT"
+        BuildSlowChangingDimension
+      fi
+
+      # If the customer profile relation succeeded, only then invoke the pig for MIN Translation. 
+      if [[ $customer_profile_loaded -eq 1 && $scd_loaded -eq 1 ]]
+      then
+        scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Starting the min translation $MINTRANPIGSCRIPT"
+        BuildMinTranslation
+      fi
+
+      # If everything is fine, only then this flag would be true.
+      # in such a case, drop the old partitions for customer profile
+      # and move the files from work to archive.
+      if [[ $customer_profile_loaded -eq 1 && $scd_loaded -eq 1 && $min_translation_loaded -eq 1 ]]
+      then
+        scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Finished loading; going to move $file to archive."
+
+        # Move files to archive directory
+        mv_log=$LOGDIR/.filemove.log
+        MkHDFSDir $ARCDIR
+        hdfs dfs -mv $WORKDIR/$file $ARCDIR >>$mv_log 2>&1
+
+        if [[ $? -ne 0 ]]
+        then
+          scriptlogger $LOGFILE $PROCESS $$ "[ERROR] Failed to move $file from $WORKDIR to $ARCDIR"
+          newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_failed_to_archive.flag
+          mv $chkpntfile $newchkpntfile
+          chkpntfile=$newchkpntfile
+          return
+        else
+          DropCustomerProfileOlderpartitions
+          newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_ready_for_event_history.flag
+          mv $chkpntfile $newchkpntfile
+          chkpntfile=$newchkpntfile
+          ready_for_device_event_history=1
+        fi
+
+        rm -f $mv_log
+      else
+        scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Will not attempt moving $file to $ARCDIR due to the failure encountered."
+
+        DropCustomerProfileCurrentPartition
+		rc=$?
+
+        if [[ $rc -ne 0 ]]
+        then
+          return 1
+        fi
+
+        if [[ $scd_loaded -eq 1 ]]
+        then
+          DropSCDLatestPartition
+		  rc=$?
+          if [[ $rc -ne 0 ]]
+          then
+            return 1
+          fi
+        fi
+
+        newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_failed_and_rolled_back.flag
+        mv $chkpntfile $newchkpntfile
+        chkpntfile=$newchkpntfile
+        return 1
+      fi
+
+      if [[ $ready_for_device_event_history -eq 1 ]]
+      then
+        scriptlogger $LOGFILE $PROCESS $$ "[INFO ] Starting Event History for Device Change $EVENT_SCRIPT"
+        DeviceEventHistory
+      fi
+    done
+
+  fi
+  
+  ####min translation druid ingestion 
+  if [[ $DRUID_TOGGLE -eq 1 && $min_translation_loaded -eq 1 ]]
+  then
+    DruidIngest
+  fi
+
+  if [[ $chkpntfile != "$CHECKPOINTDIR/checkpoint_customer_profile_finished.flag" ]]
+  then
+    newchkpntfile=$CHECKPOINTDIR/checkpoint_customer_profile_finished.flag
+    mv $chkpntfile $newchkpntfile
+  fi
+  
+  rm -f $PIDFILE
+  scriptlogger $LOGFILE $PROCESS $$  "----- Processing Finished -----"
+  
+  return 0
+}
+
+################################################################################
+################################################################################
+##### Function: Main
+Main()
+{
+  scriptlogger $LOGFILE $PROCESS $$  "----- Process START -----"
+
+  PrepareEnv
+
+  InstanceCheck
+
+  WritePIDFile
+
+  CoreLogic
+}
+
+#################################################################################
+#################################################################################
+#################################################################################
+#################################################################################
+
+Main
+rc=$?
+return $rc
