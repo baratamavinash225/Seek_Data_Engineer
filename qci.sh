@@ -183,8 +183,9 @@ ValidateArgs()
     hadoop fs -test -d "$QCI_CTL_FILE" >> $LOGFILE 2>&1
     if [[ $ -ne 0 ]]
     then
+    prevDate=`hdfs dfs -text /data/npicem/stp/permit/stp_rtt_load_subscriber_events_qci.ctl`":00"
       #prevDate=`cat $QCI_CTL_FILE`":00"
-      prevDate= `hdfs dfs -cat $QCI_CTL_FILE`":00"
+      #prevDate= `hdfs dfs -cat $QCI_CTL_FILE`":00"
       scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Previous successful run at $prevDate"
       prevtimestamp="$(date -d "$prevDate" '+%s')"
       currentLoadInterval=$(($prevtimestamp + 15 * 60))
