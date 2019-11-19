@@ -179,7 +179,9 @@ ValidateArgs()
     cur_trans_hr=`date -d"@$curdate" '+%H'`
     curquarter=$(($curdate - ($curdate % (15 * 60))))
     cur_trans_mnt=`date -d"@$curquarter" '+%M'`
-    if [ -s "$QCI_CTL_FILE" ]
+    #if [ -s "$QCI_CTL_FILE" ]
+    hadoop fs -test -d "$QCI_CTL_FILE" >> $LOGFILE 2>&1
+    if [[ $ -ne 0 ]]
     then
       prevDate=`cat $QCI_CTL_FILE`":00"
       scriptLogger $LOGFILE $PROCESS $$ "[INFO]" " Previous successful run at $prevDate"
