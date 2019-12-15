@@ -18,3 +18,9 @@ do
   # Increment the i = i + 1
 i=`expr $i + 1`
 done
+
+run commands and both the processes are independent
+sh -vx stp_customer_event_history_new_site_build.sh 2019-12-13
+
+sh -vx stp_new_site_build_scores.sh 2019-12-13 
+
