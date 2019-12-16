@@ -25,6 +25,11 @@ sh -vx stp_customer_event_history_new_site_build.sh 2019-12-13
 sh -vx stp_new_site_build_scores.sh 2019-12-13 
 
 
+Please use the below scripts to run the historic loads. 
+If any of the script fails in the middle, you need to look for the date till which date it is successful, 
+accordingly you need to update the arr and run for the consecutive scripts.
+
+
 Scripts to execute  - Customer_event_history_new_site:
 
 # !/bin/bash
