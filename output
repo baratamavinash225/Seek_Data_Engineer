@@ -1,0 +1,54 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.*;
+
+public class TestProg {
+
+	public static void main(String[] args) throws NumberFormatException, IOException {
+		
+		
+		
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));	
+		   int n;
+		   ArrayList<String> arrayList = new ArrayList<>();
+		   ArrayList<String> finalString = new ArrayList<>();
+		   System.out.print("Please enter the number of line you want to give input: ");  
+		   n = Integer.parseInt(br.readLine());
+		   System.out.println("enter the actor and film in comma(,) seperated values: ");
+		   for(int i=1; i<=n; i++)
+		  {
+		   	
+		   String input = br.readLine();
+		   arrayList.add(input);
+		   
+		  }
+		   System.out.println("entered input:" +arrayList.size());
+		   for (int i = 0; i < arrayList.size(); i++)
+		   {
+			   
+			   String eachActor=arrayList.get(i);
+			   String[] actor_movie=eachActor.split(",");
+			   finalString.add(actor_movie[0]);
+			  
+			   System.out.println("each input:"+actor_movie[0]);
+			   
+			  
+			   
+			   
+		   }
+		   
+		  Set<String> occr=new HashSet<>(finalString);
+		  for(String s:occr)
+		  {
+			  System.out.println(s);
+		  }
+			   
+		
+	
+
+	}
+
+}
