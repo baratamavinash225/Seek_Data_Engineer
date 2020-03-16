@@ -122,7 +122,68 @@ Output
 Christian Bale
 Leonardo DiCaprio
 Morgan Freeman
+		
+		
+		
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));	
+		   System.out.print("Please enter the number of line you want to give input: ");  
+		   int n;
+		   n = Integer.parseInt(br.readLine());
+		   System.out.println("enter the actor and film in comma(,) seperated values: ");
+		   
+		   ArrayList<String> arrayList = new ArrayList<>();
+		   ArrayList<String> finalString = new ArrayList<>();
+		   
+		   for(int i=1; i<=n; i++)
+		  {
+		   	
+		   String input = br.readLine();
+		   arrayList.add(input);
+		   
+		  }
+		   System.out.println("entered input:" +arrayList.size());
+		   for (int i = 0; i < arrayList.size(); i++)
+		   {
+			   
+			   String eachActor=arrayList.get(i);
+			   String[] actor_movie=eachActor.split(",");
+			   finalString.add(actor_movie[0]);
+			  
+			   System.out.println("each input:"+actor_movie[0]);
+			   
+			  
+			   
+			   
+		   }
+		   
+		  Set<String> occr=new HashSet<>(finalString);
+		  HashMap<String, Integer> map = new HashMap<>();
+		  for(String s:occr)
+		  {
+			  System.out.println(s+": "+Collections.frequency(finalString, s));
+			   
+	  
+	        
+	        map.put(s, Collections.frequency(finalString, s)); 
+	        	
+		  }
+		  System.out.println(map);
+		  Map<String,Integer> sortedMap = sortByValueDesc(map);
+		  ArrayList<String> al = new ArrayList<String>(); 
+		 
+		  for (Map.Entry<String, Integer> entry : sortedMap.entrySet()) {
+			  al.add(entry.getKey());
+	            System.out.println("Item is:" + entry.getKey() + " with value:"
+	                    + entry.getValue());
+	        }
+		  Collections.sort(al);
+		  List<String> final_List = al.subList(0, 3);
+		  System.out.println("final sorted list: "+final_List);
+		  
 
+			   
+		
+	
 
 3 rd Question
 
