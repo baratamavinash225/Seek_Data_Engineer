@@ -79,4 +79,7 @@ Usages
 `rasa run actions`
  - Start an interactive session with restaurant chatbot using RASA CLI command
 `rasa shell`
+ 
+ Sample Tests
+  - Sample tests are done with few scenarios and the conversations are available in the conversations.md file.
 
